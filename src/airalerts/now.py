@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from airalerts import baselines, data, evaluate, grid
+from airalerts import baselines, data, evaluate, grid, remaining
 from airalerts.model import FINAL, HORIZONS, design, new_estimator
 
 SIMPLE_NAMES = {
@@ -49,7 +49,9 @@ def forecast(events: pd.DataFrame, as_of: pd.Timestamp, horizons: tuple[int, ...
         "horizons": {},
     }
     if out["active"]:
-        return out  # the onset forecast is defined for a quiet city only
+        # The onset forecast is defined for a quiet city only; say how long this alert may last instead.
+        out["remaining"] = remaining.estimate(events, as_of)
+        return out
     for h in horizons:
         target = f"onset_{h}h"
         known = table[target].notna()
@@ -82,6 +84,13 @@ def as_text(result: dict) -> str:
     lines = [f"{data.REGION} at {as_of:%Y-%m-%d %H:%M} Kyiv time"]
     if result["active"]:
         lines.append(f"An alert has been running for {minutes_text(result['minutes_since_start'])}.")
+        left = result.get("remaining")
+        if left:
+            lines.append(
+                f"Likely to end in about {minutes_text(left['median_min'])} "
+                f"(80% interval: {minutes_text(left['low_min'])} to {minutes_text(left['high_min'])})."
+            )
+            lines.append(f"Based on {left['pool_size']} earlier alerts that lasted longer than this one has so far.")
         lines.append("The chance of a new alert is forecast only while no alert is active.")
         return "\n".join(lines)
     lines.append(f"No alert is active. The last one ended {minutes_text(result['minutes_since_end'])} ago.")

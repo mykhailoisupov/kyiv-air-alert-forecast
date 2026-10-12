@@ -1380,5 +1380,82 @@
         }
       ]
     }
+  },
+  "remaining_time": {
+    "design": "15-minute origins with a running alert; pool = alerts ended by t, last 16 weeks",
+    "test_start_utc": "2026-08-17T13:00:00+00:00",
+    "test_end_utc": "2026-10-12T13:00:00+00:00",
+    "test_period": {
+      "origins": 1620,
+      "alerts": 331,
+      "days": 53,
+      "estimate": {
+        "coverage_80": 0.7481,
+        "coverage_80_ci95": [
+          0.6966,
+          0.7939
+        ],
+        "median_abs_error_min": 70.91,
+        "median_abs_error_min_ci95": [
+          53.87,
+          92.1
+        ],
+        "mean_interval_width_min": 180.8
+      },
+      "baseline": {
+        "coverage_80": 0.6235,
+        "coverage_80_ci95": [
+          0.5701,
+          0.6756
+        ],
+        "median_abs_error_min": 75.14,
+        "median_abs_error_min_ci95": [
+          55.66,
+          98.31
+        ],
+        "mean_interval_width_min": 112.9
+      },
+      "error_reduction_vs_baseline": 0.0562,
+      "error_reduction_vs_baseline_ci95": [
+        0.0196,
+        0.0817
+      ]
+    },
+    "since_reform": {
+      "origins": 1134,
+      "alerts": 219,
+      "days": 35,
+      "estimate": {
+        "coverage_80": 0.7407,
+        "coverage_80_ci95": [
+          0.6747,
+          0.8072
+        ],
+        "median_abs_error_min": 78.43,
+        "median_abs_error_min_ci95": [
+          53.92,
+          103.92
+        ],
+        "mean_interval_width_min": 189.3
+      },
+      "baseline": {
+        "coverage_80": 0.6323,
+        "coverage_80_ci95": [
+          0.5587,
+          0.7079
+        ],
+        "median_abs_error_min": 83.77,
+        "median_abs_error_min_ci95": [
+          55.62,
+          112.16
+        ],
+        "mean_interval_width_min": 123.5
+      },
+      "error_reduction_vs_baseline": 0.0637,
+      "error_reduction_vs_baseline_ci95": [
+        0.0208,
+        0.0903
+      ]
+    }
   }
 }

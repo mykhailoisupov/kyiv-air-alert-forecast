@@ -1,0 +1,5 @@
+period,forecast,origins,alerts,coverage_80_%,coverage_ci95_%,median_abs_error_min,error_ci95_min,mean_width_min
+test_period,conditional on minutes elapsed,1620,331,74.8,69.7 to 79.4,70.91,53.9 to 92.1,180.8
+test_period,ignores minutes elapsed,1620,331,62.4,57.0 to 67.6,75.14,55.7 to 98.3,112.9
+since_reform,conditional on minutes elapsed,1134,219,74.1,67.5 to 80.7,78.43,53.9 to 103.9,189.3
+since_reform,ignores minutes elapsed,1134,219,63.2,55.9 to 70.8,83.77,55.6 to 112.2,123.5

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from airalerts import data, describe, evaluate, grid
+from airalerts import data, describe, evaluate, grid, remaining
 from airalerts.model import FINAL, HORIZONS, ModelSpec, coefficients
 from airalerts.report import plot_reliability, plot_skill
 
@@ -53,6 +53,10 @@ def main() -> None:
     weights = pd.DataFrame({f"{h}h": coefficients(fitted[h][FINAL.name], FINAL) for h in HORIZONS})
     weights.to_csv(args.out_dir / "tables" / "final_model_coefficients.csv", index_label="feature")
     report = {"data": info, **report}
+    window = (pd.Timestamp(report["test_start_utc"]), pd.Timestamp(report["test_end_utc"]))
+    report["remaining_time"], _ = remaining.evaluate(events, *window)
+    remaining_table = remaining.summary_table(report["remaining_time"])
+    remaining_table.to_csv(args.out_dir / "tables" / "remaining_time.csv", index=False)
     (args.out_dir / "metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     starts = {"test_period": report["test_start_utc"], "since_reform": data.REFORM.isoformat()}
     for period, start in starts.items():
@@ -64,6 +68,9 @@ def main() -> None:
     print("already-active share:", {h: report["horizons"][str(h)]["already_active_share"] for h in HORIZONS})
     print("final model, last fold, standardised coefficients")
     print(weights.to_string())
+    print()
+    print("remaining time of a running alert")
+    print(remaining_table.to_string(index=False))
     plot_skill(report, args.out_dir / "figures" / "skill.png")
     plot_reliability(predictions, args.out_dir / "figures" / "reliability.png")
 
