@@ -1,0 +1,54 @@
+"""Logistic onset-hazard model: P(a new alert starts within H hours | no alert now)."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+LOG_FEATURES = (
+    "starts_1h",
+    "starts_3h",
+    "starts_6h",
+    "starts_24h",
+    "starts_72h",
+    "starts_7d",
+    "starts_28d",
+    "alert_min_24h",
+    "alert_min_7d",
+    "since_start_h",
+    "since_end_h",
+    "last_dur_min",
+)
+RAW_FEATURES = ("last_missile", "hour_sin1", "hour_cos1", "hour_sin2", "hour_cos2")
+
+
+@dataclass(frozen=True)
+class ModelSpec:
+    name: str
+    train_weeks: int | None  # None = every earlier origin
+    reference_logits: tuple[str, ...] = ()  # reference forecasts fed in as extra features
+
+
+def logit(p: np.ndarray) -> np.ndarray:
+    p = np.clip(p, 1e-4, 1 - 1e-4)
+    return np.log(p / (1 - p))
+
+
+def design(frame: pd.DataFrame, spec: ModelSpec) -> np.ndarray:
+    columns = [np.log1p(frame[name].to_numpy(dtype=float)) for name in LOG_FEATURES]
+    columns += [frame[name].to_numpy(dtype=float) for name in RAW_FEATURES]
+    columns += [logit(frame[name].to_numpy(dtype=float)) for name in spec.reference_logits]
+    return np.column_stack(columns)
+
+
+def feature_names(spec: ModelSpec) -> list[str]:
+    return [f"log1p({n})" for n in LOG_FEATURES] + list(RAW_FEATURES) + [f"logit({n})" for n in spec.reference_logits]
+
+
+def new_estimator() -> Pipeline:
+    return make_pipeline(StandardScaler(), LogisticRegression(C=1.0, max_iter=2000))

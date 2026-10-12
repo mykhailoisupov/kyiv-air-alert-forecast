@@ -18,7 +18,15 @@ DAY = 24 * HOUR
 # Stand-in end for an alert that has not finished; far beyond any origin.
 OPEN_END = np.iinfo(np.int64).max // 4
 
-START_WINDOWS = {"starts_6h": 6 * HOUR, "starts_24h": DAY, "starts_72h": 3 * DAY, "starts_7d": 7 * DAY, "starts_28d": 28 * DAY}
+START_WINDOWS = {
+    "starts_1h": HOUR,
+    "starts_3h": 3 * HOUR,
+    "starts_6h": 6 * HOUR,
+    "starts_24h": DAY,
+    "starts_72h": 3 * DAY,
+    "starts_7d": 7 * DAY,
+    "starts_28d": 28 * DAY,
+}
 MINUTE_WINDOWS = {"alert_min_24h": DAY, "alert_min_7d": 7 * DAY}
 
 

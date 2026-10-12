@@ -8,7 +8,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from airalerts import data, describe
+from airalerts import data, describe, evaluate, grid
+from airalerts.model import ModelSpec
+
+HORIZONS = (1, 3, 6)
+MODELS = [
+    # First attempt: plain logistic regression on every earlier origin.
+    ModelSpec("logit_all_history", train_weeks=None),
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,6 +41,14 @@ def main() -> None:
     for name in ("regime_summary", "threat_summary"):
         print()
         print(tables[name].to_string(index=False))
+
+    table = grid.make_grid(events, as_of, HORIZONS)
+    report, _ = evaluate.evaluate(table, HORIZONS, MODELS)
+    report = {"data": info, **report}
+    (args.out_dir / "metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    for period in ("test_period", "since_reform"):
+        print(f"\n{period}: {report['test_start_utc']} to {report['test_end_utc']}")
+        print(evaluate.summary_table(report, period).to_string(index=False))
 
 
 if __name__ == "__main__":
