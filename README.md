@@ -6,6 +6,32 @@ From alert history alone, it estimates the chance that a new alert starts in Kyi
 
 *12 October 2026, 21:00 Kyiv time: big numbers are the model, ticks the best simple forecast.*
 
+## It covers Kyiv, not all of Ukraine, because only Kyiv had current and complete data
+
+| Source | Covers | State on 12 October 2026 |
+|---|---|---|
+| Official national feed | All regions | Stopped on 7 September: misses five of the eight test weeks |
+| Volunteer national file | Oblasts only | Current, but 5% of end times are filled in, not observed |
+| alerts.in.ua API | All regions | Token on request, and only one month of history |
+| Kyiv city API | Kyiv City | No key, current to the minute, back to February 2022 |
+
+*Each row is a source that could have been used; only the last is both current and fully observed.*
+
+- The assignment says Ukraine, and it also requires the most recent data and a test on the latest period.
+- Kyiv City stayed one alert unit, while most regions switched from oblast to raion alerts during 2025.
+- The cost: the results describe Kyiv only. The code keeps a `region` column for a national panel later.
+
+<details><summary>Sources for this table</summary>
+
+- National files and the stopped feed:
+  [Vadimkin/ukrainian-air-raid-sirens-dataset](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset)
+  and its [issue 7](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset/issues/7).
+- [alerts.in.ua API documentation](https://devs.alerts.in.ua/).
+- [Kyiv Digital open API](https://kyiv.digital/open-api/air-alert/history). All 2,641 alerts in the city's
+  published file match it.
+
+</details>
+
 ## It answers one question in a quiet city and another during an alert
 
 | City | Question | Answer |
