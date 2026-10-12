@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Raw downloads are re-fetched by the pipeline; see README for exact reproduction with --as-of.
+data/
+
+# Background research notes, kept local.
+reports/
+research_notes/

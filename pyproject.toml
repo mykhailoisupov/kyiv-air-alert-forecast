@@ -1,0 +1,30 @@
+[project]
+name = "airalerts"
+version = "0.1.0"
+description = "Time series analysis and leakage-free onset forecasting of Kyiv air raid alerts"
+readme = "README.md"
+authors = [
+    { name = "MikeIsupov", email = "misupov@kse.org.ua" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "pyarrow>=26.0.0",
+    "requests>=2.34.2",
+    "scikit-learn>=1.9.1",
+    "tzdata>=2026.5",
+]
+
+[project.scripts]
+airalerts = "airalerts.run:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
