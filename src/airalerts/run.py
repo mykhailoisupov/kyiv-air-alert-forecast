@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from airalerts import data
+from airalerts import data, describe
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +28,12 @@ def main() -> None:
     events, info = data.load_events(args.raw_dir, as_of)
     info["published_file_check"] = data.compare_with_open_data(events, args.raw_dir)
     print(json.dumps(info, indent=2))
+    as_of = pd.Timestamp(info["as_of_utc"])
+
+    tables = describe.run(events, as_of, args.out_dir)
+    for name in ("regime_summary", "threat_summary"):
+        print()
+        print(tables[name].to_string(index=False))
 
 
 if __name__ == "__main__":
