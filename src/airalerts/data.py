@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from xml.etree import ElementTree
 
 import numpy as np
 import pandas as pd
@@ -35,6 +36,21 @@ REFORM = pd.Timestamp("2026-09-07 17:39:50", tz=KYIV_TZ).tz_convert("UTC")
 RED_CAUSES = frozenset({"missile", "ballistic", "massive-drone"})
 
 
+def parse_history(body: bytes) -> list[dict]:
+    """Items of the history response. The API answers in JSON or in XML regardless of the Accept header."""
+    text = body.decode("utf-8-sig").lstrip()
+    if not text.startswith("<"):
+        return json.loads(text)["items"]
+    return [
+        {
+            "state": int(item.findtext("state")),
+            "causes": [cause.text for cause in item.find("causes")],
+            "created_at": item.findtext("created_at"),
+        }
+        for item in ElementTree.fromstring(text).find("items")
+    ]
+
+
 def download(raw_dir: Path) -> dict:
     """Fetch both sources into `raw_dir` and record when the fetch started."""
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -42,7 +58,10 @@ def download(raw_dir: Path) -> dict:
     for name, url in ((HISTORY_FILE, HISTORY_URL), (OPEN_DATA_FILE, OPEN_DATA_URL)):
         response = requests.get(url, headers={"Accept": "application/json"}, timeout=60)
         response.raise_for_status()
-        (raw_dir / name).write_bytes(response.content)
+        body = response.content
+        if name == HISTORY_FILE:
+            body = json.dumps({"items": parse_history(body)}, ensure_ascii=False).encode("utf-8")
+        (raw_dir / name).write_bytes(body)
     meta = {"fetched_at_utc": fetched.isoformat()}
     (raw_dir / META_FILE).write_text(json.dumps(meta, indent=2), encoding="utf-8")
     return meta
