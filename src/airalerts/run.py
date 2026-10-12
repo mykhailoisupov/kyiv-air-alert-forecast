@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from airalerts import data, describe, evaluate, grid, remaining
+from airalerts import data, describe, evaluate, grid, now, page, remaining
 from airalerts.model import FINAL, HORIZONS, ModelSpec, coefficients
 from airalerts.report import plot_reliability, plot_skill
 
@@ -71,6 +71,7 @@ def main() -> None:
     print()
     print("remaining time of a running alert")
     print(remaining_table.to_string(index=False))
+    page.write(args.out_dir / "page.html", events, as_of, now.forecast(events, as_of), report, predictions)
     plot_skill(report, args.out_dir / "figures" / "skill.png")
     plot_reliability(predictions, args.out_dir / "figures" / "reliability.png")
 
