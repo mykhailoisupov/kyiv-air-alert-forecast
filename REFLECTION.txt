@@ -1,5 +1,5 @@
-What went wrong? My first model, a logistic regression trained on all history, looked strong (+8% to +20% Brier skill) only because my reference, an hour-of-day climatology, was weak. A flat 28-day rate and a simple recent-onset rule beat that reference. Since the September alert reform the first model fell behind the simple rule at 6 hours and forecast too low. Boosted trees failed outright.
+What went wrong? My first model, logistic regression on all history, looked strong (+8% to +20% Brier skill) only because my reference forecast was weak: a flat 28-day rate beat it. Since the September alert reform that model forecast too low and lost to a simple rule at 6 hours. Boosted trees failed outright.
 
-How did I adjust? I scored every forecast against the strongest simple one, split results by period, and trained on the last 16 weeks only.
+How did I adjust? I scored everything against the strongest simple forecast, split results by period, and trained on the last 16 weeks only.
 
-Why is the final version better? Since the reform it beats the best simple forecast by 10-12% at 3-6 hours and its average forecast is close to what happened. Over the full eight weeks it is not better than the first attempt, and the README says so.
+Why is the final version better? Since the reform it beats the best simple forecast by 10-12% at 3-6 hours. Over the full eight weeks it is not better, and the README says so.

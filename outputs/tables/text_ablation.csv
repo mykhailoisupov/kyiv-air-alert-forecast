@@ -1,0 +1,9 @@
+origins,horizon_h,period,rows,brier_without_text,brier_with_text,skill_of_text_%,ci95_%
+hourly origins,1,test_period,940,0.21797,0.20928,4.0,+0.4 to +7.3
+hourly origins,1,since_reform,554,0.23099,0.22716,1.7,-3.5 to +6.3
+hourly origins,3,test_period,940,0.21702,0.21044,3.0,-0.3 to +6.5
+hourly origins,3,since_reform,554,0.20127,0.2036,-1.2,-4.4 to +2.3
+hourly origins,6,test_period,940,0.1568,0.15391,1.8,-2.2 to +5.7
+hourly origins,6,since_reform,554,0.10715,0.11084,-3.4,-9.2 to +3.4
+15-minute origins,1,test_period,3755,0.21699,0.20786,4.2,+1.1 to +6.7
+15-minute origins,1,since_reform,2235,0.23081,0.22683,1.7,-2.4 to +5.6

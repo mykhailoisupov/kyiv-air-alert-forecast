@@ -9,6 +9,7 @@ This project describes four and a half years of air raid alerts in Kyiv and test
 - **Alerts are about as long as before; the quiet between them collapsed.** The median alert lasts 35 minutes since August 2026, inside the 28 to 49 minute range of earlier periods. The median quiet gap fell to 1.4 hours from 5 to 11 hours.
 - **A new alert within the next few hours is forecastable, but only a little better than simple rules.** On the latest eight weeks, a logistic model beats a trailing hour-of-day climatology by 5% (1 h), 13% (3 h) and 19% (6 h) in Brier score. Against the strongest simple forecast the margin is 3% to 5%, with intervals that include zero.
 - **Anything anchored to the old base rate failed.** An all-history hour-of-day climatology scored 27% to 112% worse than the 28-day one, and boosted trees 18% to 86% worse.
+- **Air Force channel text helps a little at one hour and not beyond.** Adding counts of recent Telegram posts improved the 1 h forecast by 4% over the eight weeks. At 3 h and 6 h, and in the weeks since the reform, the change is within noise.
 
 ![Alerts and hours under alert per month](outputs/figures/monthly.png)
 
@@ -117,13 +118,35 @@ The "best simple forecast" is whichever reference scored best on that period, ch
 
 The 16- and 32-week windows stay positive in every cell; the shortest and the longest do not. The climatology input makes no real difference at 16 weeks and hurts at 8 weeks and on all history (full table in `outputs/tables/sensitivity.csv`).
 
+## Text experiment
+
+The brief's optional part: does public text published before the forecast time improve the forecast?
+
+- **Source.** 24,800 posts from the Ukrainian Air Force channel [@kpszsu](https://t.me/s/kpszsu), 26 April to 12 October 2026, read from the public web preview. These are minute-level threat messages such as "jet-powered UAV heading for Kyiv from the north".
+- **Features at t.** Counts of posts published strictly before t: all posts in the last 60 and 180 minutes, posts mentioning Kyiv or "the capital" in the last 15, 30, 60 and 180 minutes, posts with missile or strategic-aviation keywords in the last 60 and 180 minutes, and minutes since the last Kyiv mention. The keyword groups and windows were fixed before any result was produced.
+- **Edited posts.** 2% of posts are marked edited. They keep their timestamp but their text is ignored, because the text shown now may have been written after publication.
+- **Test.** The final model with and without these features, on the same folds. The second design uses 15-minute origins, where recent text has the best chance to matter.
+
+Brier skill of the model with text over the same model without it, with 95% intervals:
+
+| Origins | Horizon | Latest 8 weeks | Since 7 Sep reform |
+|---|---|---|---|
+| Hourly | 1 h | +4.0% (+0.4 to +7.3) | +1.7% (-3.5 to +6.3) |
+| Hourly | 3 h | +3.0% (-0.3 to +6.5) | -1.2% (-4.4 to +2.3) |
+| Hourly | 6 h | +1.8% (-2.2 to +5.7) | -3.4% (-9.2 to +3.4) |
+| Every 15 minutes | 1 h | +4.2% (+1.1 to +6.7) | +1.7% (-2.4 to +5.6) |
+
+Text adds about 4% at one hour over the eight weeks, and that interval excludes zero in both designs. Nothing is measurable at 3 h or 6 h, and since the reform no interval excludes zero. The gain is real but small, so the headline model stays on alert history alone.
+
+Two caveats. The posts were collected after the fact, so posts deleted since are missing. And keyword matching is crude: a post about a town near Kyiv that does not name Kyiv is not counted. Structured extraction of threat type, direction and target from each post, for example with an LLM used only as a parser, is the natural next step and was not run here.
+
 ## Limits
 
 - One city, eight weeks, and a test period that sits inside a surge. The intervals are wide and most margins over the best simple forecast include zero.
 - The alert-level reform is five weeks old; any conclusion about yellow and red alerts rests on 25 red-type alerts.
 - Alerts are a response to an adversary. A pattern that holds for eight weeks can end overnight, and the model only adapts after the change shows up in the data.
 - Hourly origins hide anything faster than an hour, including how alerts spread between regions.
-- The forecast uses alert history only. No text, launch reports or weather.
+- The headline forecast uses alert history only. Text was tested with keyword counts from one channel; launch reports and weather were not used.
 
 ## Reproduce
 
@@ -134,6 +157,15 @@ uv run python -m airalerts.run --as-of 2026-10-12T18:00:00Z --sensitivity
 ```
 
 `--as-of` discards everything after the given UTC time, so the command reproduces the numbers above from a fresh download. Without it, the run uses all data available at download time. Outputs go to `outputs/`: `metrics.json`, `tables/` and `figures/`.
+
+The text experiment needs the channel backfill first, which takes about half an hour at one request per second:
+
+```
+uv run python -m airalerts.telegram kpszsu --since 2026-04-27T00:00:00Z
+uv run python -m airalerts.text --as-of 2026-10-12T18:00:00Z
+```
+
+Posts can be edited or deleted after publication, so a later backfill may differ slightly from the one used here.
 
 ## Layout
 
@@ -147,7 +179,8 @@ src/airalerts/
   evaluate.py   walk-forward folds, scores, day-block bootstrap
   report.py     evaluation figures
   run.py        entry point
-  telegram.py   backfill of a public Telegram channel (for the text experiment)
+  telegram.py   backfill of a public Telegram channel
+  text.py       text features and the with/without-text ablation
 tests/          data cleaning and leakage tests
 outputs/        metrics, tables and figures from the run above
 ```
