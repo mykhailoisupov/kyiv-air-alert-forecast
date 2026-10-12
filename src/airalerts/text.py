@@ -32,7 +32,7 @@ SINCE_CAP = 24 * 60
 TEXT_FEATURES = tuple(f"posts_{name}_{w}m" for name, (_, windows) in GROUPS.items() for w in windows) + (SINCE_KYIV,)
 
 BASE = ModelSpec("logit_16w", train_weeks=16, reference_logits=("hour_28d",))
-WITH_TEXT = ModelSpec("logit_16w_text", train_weeks=16, reference_logits=("hour_28d",), extra_log_features=TEXT_FEATURES)
+WITH_TEXT = ModelSpec("logit_16w_text", 16, reference_logits=("hour_28d",), extra_log_features=TEXT_FEATURES)
 # Hourly origins repeat the main experiment; 15-minute origins give text its best chance.
 EXPERIMENTS = (("hourly origins", "1h", (1, 3, 6)), ("15-minute origins", "15min", (1,)))
 
@@ -66,7 +66,8 @@ def run(events: pd.DataFrame, posts: pd.DataFrame, as_of: pd.Timestamp) -> tuple
         report, predictions, _ = evaluate.evaluate(table, horizons, [BASE, WITH_TEXT])
         coverage[label] = {"test_start_utc": report["test_start_utc"], "test_end_utc": report["test_end_utc"]}
         for h in horizons:
-            for period, part in (("test_period", predictions[h]), ("since_reform", predictions[h][predictions[h].index >= data.REFORM])):
+            since_reform = predictions[h][predictions[h].index >= data.REFORM]
+            for period, part in (("test_period", predictions[h]), ("since_reform", since_reform)):
                 y = part["y"].to_numpy()
                 base, text = part[BASE.name].to_numpy(), part[WITH_TEXT.name].to_numpy()
                 days = part.index.tz_convert(data.KYIV_TZ).strftime("%Y-%m-%d").to_numpy()

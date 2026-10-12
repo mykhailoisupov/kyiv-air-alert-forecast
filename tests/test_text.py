@@ -51,7 +51,8 @@ def test_text_features_do_not_change_when_later_posts_are_hidden():
             "edited": rng.random(600) < 0.05,
         }
     )
-    origins = pd.DatetimeIndex([stamp("00:00:00") + pd.Timedelta(seconds=int(s)) for s in rng.integers(86400, 5 * 86400, 80)]).as_unit("s")
+    offsets = rng.integers(86400, 5 * 86400, 80)
+    origins = pd.DatetimeIndex([stamp("00:00:00") + pd.Timedelta(seconds=int(s)) for s in offsets]).as_unit("s")
     full = text.build_text_features(posts, origins)
     for t in origins:
         hidden = text.build_text_features(posts[posts["published_utc"] < t], pd.DatetimeIndex([t]))

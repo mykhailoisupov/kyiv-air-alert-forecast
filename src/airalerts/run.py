@@ -87,7 +87,8 @@ def main() -> None:
         rows = rows[rows["forecast"].str.startswith("logit_")]
         rows.to_csv(args.out_dir / "tables" / "sensitivity.csv", index=False)
         print()
-        print(rows.pivot_table(index="forecast", columns=["period", "horizon_h"], values="vs_best_simple_%", sort=False).to_string())
+        by = dict(index="forecast", columns=["period", "horizon_h"], values="vs_best_simple_%", sort=False)
+        print(rows.pivot_table(**by).to_string())
 
 
 if __name__ == "__main__":

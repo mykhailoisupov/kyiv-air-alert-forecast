@@ -86,7 +86,9 @@ def build_features(events: pd.DataFrame, origins: pd.DatetimeIndex) -> pd.DataFr
     return out
 
 
-def build_labels(events: pd.DataFrame, origins: pd.DatetimeIndex, horizons: tuple[int, ...], as_of: pd.Timestamp) -> pd.DataFrame:
+def build_labels(
+    events: pd.DataFrame, origins: pd.DatetimeIndex, horizons: tuple[int, ...], as_of: pd.Timestamp
+) -> pd.DataFrame:
     """`onset_{H}h` = a new alert starts in (t, t+H]. Missing where t+H is past `as_of`."""
     start_s = epoch_seconds(events["start"])
     t_s = epoch_seconds(origins)
@@ -100,7 +102,9 @@ def build_labels(events: pd.DataFrame, origins: pd.DatetimeIndex, horizons: tupl
     return out
 
 
-def make_grid(events: pd.DataFrame, as_of: pd.Timestamp, horizons: tuple[int, ...] = (1, 3, 6), freq: str = "1h") -> pd.DataFrame:
+def make_grid(
+    events: pd.DataFrame, as_of: pd.Timestamp, horizons: tuple[int, ...] = (1, 3, 6), freq: str = "1h"
+) -> pd.DataFrame:
     """Features and labels for every origin from the first alert to `as_of`."""
     origins = pd.date_range(events["start"].min().ceil(freq), as_of.floor(freq), freq=freq, unit="s")
     return build_features(events, origins).join(build_labels(events, origins, horizons, as_of))

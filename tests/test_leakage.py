@@ -56,7 +56,8 @@ def peeking_features(events: pd.DataFrame, origins: pd.DatetimeIndex) -> pd.Data
     out = grid.build_features(events, origins)
     start_s, t_s = grid.epoch_seconds(events["start"]), grid.epoch_seconds(origins)
     nxt = np.searchsorted(start_s, t_s, side="right")
-    out["next_start_h"] = np.where(nxt < len(start_s), (start_s[np.minimum(nxt, len(start_s) - 1)] - t_s) / 3600, np.nan)
+    next_start = start_s[np.minimum(nxt, len(start_s) - 1)]
+    out["next_start_h"] = np.where(nxt < len(start_s), (next_start - t_s) / 3600, np.nan)
     return out
 
 

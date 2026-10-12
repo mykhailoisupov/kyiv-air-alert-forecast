@@ -17,7 +17,9 @@ TEST_WEEKS = 8
 BOOTSTRAP_SAMPLES = 1000
 
 
-def latest_window(grid: pd.DataFrame, horizons: tuple[int, ...], test_weeks: int = TEST_WEEKS) -> tuple[pd.Timestamp, pd.Timestamp]:
+def latest_window(
+    grid: pd.DataFrame, horizons: tuple[int, ...], test_weeks: int = TEST_WEEKS
+) -> tuple[pd.Timestamp, pd.Timestamp]:
     """The latest `test_weeks` weeks for which every horizon's label is known. End is exclusive."""
     known = grid[[f"onset_{h}h" for h in horizons]].notna().all(axis=1)
     step = grid.index[1] - grid.index[0]
@@ -29,7 +31,9 @@ def fold_starts(start: pd.Timestamp, end: pd.Timestamp) -> list[pd.Timestamp]:
     return list(pd.date_range(start, end - pd.Timedelta(seconds=1), freq=WEEK))
 
 
-def split(frame: pd.DataFrame, fold_start: pd.Timestamp, horizon_h: int, train_weeks: int | None) -> tuple[pd.DataFrame, pd.DataFrame]:
+def split(
+    frame: pd.DataFrame, fold_start: pd.Timestamp, horizon_h: int, train_weeks: int | None
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Training rows are origins whose label window closed by `fold_start`; test rows are the week after."""
     closes = frame.index + pd.Timedelta(hours=horizon_h)
     train = closes <= fold_start
@@ -39,7 +43,9 @@ def split(frame: pd.DataFrame, fold_start: pd.Timestamp, horizon_h: int, train_w
     return frame[train], frame[test]
 
 
-def backtest(grid: pd.DataFrame, horizon_h: int, specs: list[ModelSpec], start: pd.Timestamp, end: pd.Timestamp) -> tuple[pd.DataFrame, list[dict], dict]:
+def backtest(
+    grid: pd.DataFrame, horizon_h: int, specs: list[ModelSpec], start: pd.Timestamp, end: pd.Timestamp
+) -> tuple[pd.DataFrame, list[dict], dict]:
     """Out-of-sample probabilities for one horizon on quiet origins in [start, end).
 
     Also returns per-fold bookkeeping and the models fitted for the final fold.
@@ -73,7 +79,9 @@ def brier(y: np.ndarray, p: np.ndarray) -> float:
     return float(np.mean((p - y) ** 2))
 
 
-def skill_interval(y: np.ndarray, p: np.ndarray, reference: np.ndarray, days: np.ndarray, seed: int = 0) -> tuple[float, float]:
+def skill_interval(
+    y: np.ndarray, p: np.ndarray, reference: np.ndarray, days: np.ndarray, seed: int = 0
+) -> tuple[float, float]:
     """95% interval for Brier skill, resampling whole Kyiv calendar days."""
     _, day_index = np.unique(days, return_inverse=True)
     model_error = np.bincount(day_index, weights=(p - y) ** 2)
@@ -118,7 +126,8 @@ def score(predictions: pd.DataFrame, forecasts: list[str]) -> dict:
 def reliability(predictions: pd.DataFrame, forecast: str, bins: int = 10) -> pd.DataFrame:
     edges = np.linspace(0, 1, bins + 1)
     bucket = np.clip(np.digitize(predictions[forecast], edges) - 1, 0, bins - 1)
-    table = predictions.assign(bucket=bucket).groupby("bucket").agg(forecast=(forecast, "mean"), observed=("y", "mean"), rows=("y", "size"))
+    columns = dict(forecast=(forecast, "mean"), observed=("y", "mean"), rows=("y", "size"))
+    table = predictions.assign(bucket=bucket).groupby("bucket").agg(**columns)
     return table.reset_index(drop=True)
 
 
@@ -129,9 +138,12 @@ def already_active_share(grid: pd.DataFrame, horizon_h: int, start: pd.Timestamp
     return round(float(window["active"].sum() / alert_ahead.sum()), 4)
 
 
-def evaluate(grid: pd.DataFrame, horizons: tuple[int, ...], specs: list[ModelSpec]) -> tuple[dict, dict[int, pd.DataFrame], dict[int, dict]]:
+def evaluate(
+    grid: pd.DataFrame, horizons: tuple[int, ...], specs: list[ModelSpec]
+) -> tuple[dict, dict[int, pd.DataFrame], dict[int, dict]]:
     start, end = latest_window(grid, horizons)
-    report = {"test_start_utc": start.isoformat(), "test_end_utc": end.isoformat(), "reference": REFERENCE, "horizons": {}}
+    report = {"test_start_utc": start.isoformat(), "test_end_utc": end.isoformat()}
+    report.update({"reference": REFERENCE, "horizons": {}})
     predictions, fitted = {}, {}
     for h in horizons:
         predictions[h], folds, fitted[h] = backtest(grid, h, specs, start, end)
@@ -157,7 +169,7 @@ def summary_table(report: dict, period: str = "test_period") -> pd.DataFrame:
                     "skill_%": round(100 * m["brier_skill"], 1),
                     "ci95_%": f"{100 * m['brier_skill_ci95'][0]:+.1f} to {100 * m['brier_skill_ci95'][1]:+.1f}",
                     "vs_best_simple_%": round(100 * m["skill_vs_best_simple"], 1),
-                    "vs_best_ci95_%": f"{100 * m['skill_vs_best_simple_ci95'][0]:+.1f} to {100 * m['skill_vs_best_simple_ci95'][1]:+.1f}",
+                    "vs_best_ci95_%": " to ".join(f"{100 * v:+.1f}" for v in m["skill_vs_best_simple_ci95"]),
                     "mean_p": m["mean_forecast"],
                     "log_loss": m["log_loss"],
                     "pr_auc": m["pr_auc"],

@@ -35,19 +35,25 @@ def test_local_to_utc_moves_a_skipped_spring_time_forward():
 
 
 def test_parse_history_reads_json_and_xml_the_same():
-    as_json = b'{"items":[{"state":0,"causes":[],"created_at":"2026-10-12 19:13:07"},{"state":1,"causes":["drone","missile"],"created_at":"2026-10-12 19:00:12"}]}'
+    as_json = (
+        b'{"items":[{"state":0,"causes":[],"created_at":"2026-10-12 19:13:07"},'
+        b'{"state":1,"causes":["drone","missile"],"created_at":"2026-10-12 19:00:12"}]}'
+    )
     as_xml = (
         b'<?xml version="1.0" encoding="utf-8"?>\n<root><items>'
         b"<item><state>0</state><causes/><created_at>2026-10-12 19:13:07</created_at></item>"
-        b"<item><state>1</state><causes><item>drone</item><item>missile</item></causes><created_at>2026-10-12 19:00:12</created_at></item>"
+        b"<item><state>1</state><causes><item>drone</item><item>missile</item></causes>"
+        b"<created_at>2026-10-12 19:00:12</created_at></item>"
         b"</items></root>"
     )
     assert data.parse_history(as_xml) == data.parse_history(as_json)
-    assert data.parse_history(as_xml)[1] == {"state": 1, "causes": ["drone", "missile"], "created_at": "2026-10-12 19:00:12"}
+    second = {"state": 1, "causes": ["drone", "missile"], "created_at": "2026-10-12 19:00:12"}
+    assert data.parse_history(as_xml)[1] == second
 
 
 def history(rows: list[tuple[int, list[str], str]]) -> pd.DataFrame:
-    return pd.DataFrame({"state": [r[0] for r in rows], "causes": [r[1] for r in rows], "ts": utc(*[r[2] for r in rows])})
+    states, causes, stamps = zip(*rows)
+    return pd.DataFrame({"state": list(states), "causes": list(causes), "ts": utc(*stamps)})
 
 
 def test_pair_events_uses_latest_start_and_drops_repeats():
@@ -73,7 +79,9 @@ def test_pair_events_uses_latest_start_and_drops_repeats():
 
 def test_pair_events_keeps_a_running_alert_open():
     events, _ = data.pair_events(
-        history([(1, [], "2026-10-01 09:00:00"), (0, [], "2026-10-01 09:30:00"), (1, ["drone"], "2026-10-01 10:00:00")])
+        history(
+            [(1, [], "2026-10-01 09:00:00"), (0, [], "2026-10-01 09:30:00"), (1, ["drone"], "2026-10-01 10:00:00")]
+        )
     )
     assert len(events) == 2
     assert pd.isna(events["end"].iloc[1])

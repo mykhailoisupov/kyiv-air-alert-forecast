@@ -140,14 +140,17 @@ def threat_summary(events: pd.DataFrame) -> pd.DataFrame:
     """Durations since the reform, by the causes attached to the finished alert."""
     part = events[(events["start"] >= REFORM) & events["end"].notna()].copy()
     part["duration_min"] = (part["end"] - part["start"]).dt.total_seconds() / 60
-    table = part.groupby("threat")["duration_min"].agg(alerts="count", median_min="median", p90_min=lambda d: d.quantile(0.9))
-    return table.round(1).rename(index={"drone": "drone only (yellow)", "missile": "missile, ballistic or massive drone (red)"}).reset_index()
+    durations = part.groupby("threat")["duration_min"]
+    table = durations.agg(alerts="count", median_min="median", p90_min=lambda d: d.quantile(0.9))
+    names = {"drone": "drone only (yellow)", "missile": "missile, ballistic or massive drone (red)"}
+    return table.round(1).rename(index=names).reset_index()
 
 
 def plot_monthly(monthly: pd.DataFrame, as_of: pd.Timestamp, path: Path) -> None:
     fig, axes = plt.subplots(2, 1, figsize=(10, 6.2), sharex=True)
     fig.subplots_adjust(left=0.07, right=0.985, top=0.83, bottom=0.07, hspace=0.32)
-    titled(fig, "September 2026 was Kyiv's heaviest month for alerts since March 2022", "Per calendar month, Kyiv time. The last bar is a partial month.")
+    title = "September 2026 was Kyiv's heaviest month for alerts since March 2022"
+    titled(fig, title, "Per calendar month, Kyiv time. The last bar is a partial month.")
     partial = monthly["days_covered"] < 27
     colours = np.where(partial, BLUE_LIGHT, BLUE)
     reform = REFORM.tz_convert(KYIV_TZ).tz_localize(None)
@@ -156,12 +159,18 @@ def plot_monthly(monthly: pd.DataFrame, as_of: pd.Timestamp, path: Path) -> None
         ax.bar(monthly["month"] + pd.Timedelta(days=15), monthly[column], width=22, color=colours, linewidth=0)
         ax.set_title(label, loc="left", fontsize=10, color=INK_2)
         for _, row in monthly.nlargest(2, column).iterrows():
-            ax.annotate(fmt.format(row[column]), (row["month"] + pd.Timedelta(days=15), row[column]), xytext=(7, 1), textcoords="offset points", ha="left", fontsize=9, color=INK)
+            at = (row["month"] + pd.Timedelta(days=15), row[column])
+            note = dict(xytext=(7, 1), textcoords="offset points", ha="left", fontsize=9, color=INK)
+            ax.annotate(fmt.format(row[column]), at, **note)
         ax.axvline(reform, color=MUTED, linewidth=0.8)
         ax.set_ylim(0, monthly[column].max() * 1.15)
-    axes[0].annotate("7 Sep 2026: yellow and red levels", (reform, axes[0].get_ylim()[1]), xytext=(-6, -2), textcoords="offset points", ha="right", va="top", fontsize=9, color=INK_2)
+    note = dict(textcoords="offset points", fontsize=9, color=INK_2)
+    at = (reform, axes[0].get_ylim()[1])
+    axes[0].annotate("7 Sep 2026: yellow and red levels", at, xytext=(-6, -2), ha="right", va="top", **note)
     last = monthly.iloc[-1]
-    axes[0].annotate(f"{last['month']:%b}: first {last['days_covered']:.0f} days", (last["month"] + pd.Timedelta(days=15), last["alerts"] / 2), xytext=(8, 0), textcoords="offset points", ha="left", va="center", fontsize=9, color=INK_2)
+    partial_label = f"{last['month']:%b}: first {last['days_covered']:.0f} days"
+    at = (last["month"] + pd.Timedelta(days=15), last["alerts"] / 2)
+    axes[0].annotate(partial_label, at, xytext=(8, 0), ha="left", va="center", **note)
     axes[1].set_xlim(right=monthly["month"].iloc[-1] + pd.Timedelta(days=250))
     axes[1].xaxis.set_major_locator(mdates.YearLocator())
     axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
@@ -170,20 +179,26 @@ def plot_monthly(monthly: pd.DataFrame, as_of: pd.Timestamp, path: Path) -> None
 
 
 def regime_legend(fig, lines) -> None:
-    fig.legend(lines, REGIME_NAMES, loc="upper left", bbox_to_anchor=(0.005, 0.895), ncols=4, fontsize=9, labelcolor=INK_2, handlelength=1.6, columnspacing=1.6)
+    style = dict(ncols=4, fontsize=9, labelcolor=INK_2, handlelength=1.6, columnspacing=1.6)
+    fig.legend(lines, REGIME_NAMES, loc="upper left", bbox_to_anchor=(0.005, 0.895), **style)
 
 
 def plot_hour_profile(profile: pd.DataFrame, path: Path) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.6))
     fig.subplots_adjust(left=0.06, right=0.985, top=0.74, bottom=0.12, wspace=0.16)
-    titled(fig, "Since August 2026, alerts come around the clock, not mostly at night", "By Kyiv clock hour, averaged over the days of each period.")
-    panels = (("starts", "Alert starts in that clock hour, per day", 1.0, "{x:.2f}"), ("share_under_alert", "Share of the hour under alert", 100.0, "{x:.0f}%"))
+    title = "Since August 2026, alerts come around the clock, not mostly at night"
+    titled(fig, title, "By Kyiv clock hour, averaged over the days of each period.")
+    panels = (
+        ("starts", "Alert starts in that clock hour, per day", 1.0, "{x:.2f}"),
+        ("share_under_alert", "Share of the hour under alert", 100.0, "{x:.0f}%"),
+    )
     lines = []
     for ax, (column, label, scale, fmt) in zip(axes, panels):
         lines = []
         for name, _, colour in REGIMES:
             part = profile[profile["regime"] == name]
-            lines += ax.plot(part["local_hour"], part[column] * scale, color=colour, marker="o", markersize=4, markeredgecolor=SURFACE, markeredgewidth=1)
+            marks = dict(marker="o", markersize=4, markeredgecolor=SURFACE, markeredgewidth=1)
+            lines += ax.plot(part["local_hour"], part[column] * scale, color=colour, **marks)
         ax.set_title(label, loc="left", fontsize=10, color=INK_2, pad=10)
         ax.set_xticks(range(0, 24, 3), [f"{h:02d}:00" for h in range(0, 24, 3)])
         ax.tick_params(axis="x", pad=7)
@@ -207,10 +222,23 @@ def plot_durations_and_gaps(events: pd.DataFrame, path: Path) -> None:
     gap_h = ((closed["start"].shift(-1) - closed["end"]).dt.total_seconds() / HOUR).to_numpy()
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.6))
     fig.subplots_adjust(left=0.07, right=0.985, top=0.74, bottom=0.14, wspace=0.18)
-    titled(fig, "Alert lengths changed little; the quiet between alerts collapsed", "Share of alerts (left) and of quiet gaps (right) that last longer than the value on the x-axis.")
+    subtitle = "Share of alerts (left) and of quiet gaps (right) that last longer than the value on the x-axis."
+    titled(fig, "Alert lengths changed little; the quiet between alerts collapsed", subtitle)
     panels = (
-        (duration_min, "Alert duration", [5, 15, 30, 60, 120, 240, 480], ["5 min", "15 min", "30 min", "1 h", "2 h", "4 h", "8 h"], (3, 600)),
-        (gap_h, "Quiet gap before the next alert", [0.25, 1, 4, 12, 24, 72, 168, 720], ["15 min", "1 h", "4 h", "12 h", "1 d", "3 d", "1 wk", "30 d"], (0.1, 1000)),
+        (
+            duration_min,
+            "Alert duration",
+            [5, 15, 30, 60, 120, 240, 480],
+            ["5 min", "15 min", "30 min", "1 h", "2 h", "4 h", "8 h"],
+            (3, 600),
+        ),
+        (
+            gap_h,
+            "Quiet gap before the next alert",
+            [0.25, 1, 4, 12, 24, 72, 168, 720],
+            ["15 min", "1 h", "4 h", "12 h", "1 d", "3 d", "1 wk", "30 d"],
+            (0.1, 1000),
+        ),
     )
     lines = []
     for ax, (values, label, ticks, tick_labels, limits) in zip(axes, panels):

@@ -27,7 +27,9 @@ def plot_skill(report: dict, path: Path) -> None:
     names = list(LABELS)
     fig, axes = plt.subplots(1, len(horizons), figsize=(10, 4.4), sharey=True, sharex=True)
     fig.subplots_adjust(left=0.2, right=0.985, top=0.72, bottom=0.14, wspace=0.08)
-    titled(fig, "Clear skill over climatology at 3 and 6 hours, marginal at 1 hour", "Brier skill over a trailing hour-of-day climatology (0 = no better). Lines are 95% intervals from resampling days.")
+    subtitle = "Brier skill over a trailing hour-of-day climatology (0 = no better). "
+    subtitle += "Lines are 95% intervals from resampling days."
+    titled(fig, "Clear skill over climatology at 3 and 6 hours, marginal at 1 hour", subtitle)
     handles = []
     for ax, h in zip(axes, horizons):
         handles = []
@@ -45,7 +47,9 @@ def plot_skill(report: dict, path: Path) -> None:
         ax.grid(axis="y", visible=False)
         ax.grid(axis="x", visible=True)
         ax.xaxis.set_major_formatter("{x:+.0f}%")
-    fig.legend(handles, [label for _, label, _ in PERIODS], loc="upper left", bbox_to_anchor=(0.005, 0.875), ncols=2, fontsize=9, labelcolor=INK_2, columnspacing=1.6, handletextpad=0.3)
+    style = dict(ncols=2, fontsize=9, labelcolor=INK_2, columnspacing=1.6, handletextpad=0.3)
+    names = [label for _, label, _ in PERIODS]
+    fig.legend(handles, names, loc="upper left", bbox_to_anchor=(0.005, 0.875), **style)
     fig.savefig(path, dpi=160)
     plt.close(fig)
 
@@ -54,7 +58,9 @@ def plot_reliability(predictions: dict[int, pd.DataFrame], path: Path, min_rows:
     """Forecast probability against observed frequency for the final and first models."""
     fig, axes = plt.subplots(1, len(predictions), figsize=(10, 4.4), sharey=True, sharex=True)
     fig.subplots_adjust(left=0.07, right=0.975, top=0.72, bottom=0.14, wspace=0.16)
-    titled(fig, "Calibration over the latest 8 weeks is rough for both models", f"Each dot is a forecast bin with at least {min_rows} origins; above the diagonal means the forecast was too low.")
+    subtitle = f"Each dot is a forecast bin with at least {min_rows} origins; "
+    subtitle += "above the diagonal means the forecast was too low."
+    titled(fig, "Calibration over the latest 8 weeks is rough for both models", subtitle)
     lines = []
     for ax, (h, frame) in zip(axes, predictions.items()):
         lines = []
@@ -62,7 +68,8 @@ def plot_reliability(predictions: dict[int, pd.DataFrame], path: Path, min_rows:
         for name, _, colour in MODELS:
             table = evaluate.reliability(frame, name)
             table = table[table["rows"] >= min_rows]
-            lines += ax.plot(table["forecast"], table["observed"], color=colour, marker="o", markersize=6, markeredgecolor=SURFACE, markeredgewidth=1.5)
+            marks = dict(marker="o", markersize=6, markeredgecolor=SURFACE, markeredgewidth=1.5)
+            lines += ax.plot(table["forecast"], table["observed"], color=colour, **marks)
         ax.set_title(f"New alert within {h} h", loc="left", fontsize=10, color=INK_2, pad=8)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
@@ -72,6 +79,8 @@ def plot_reliability(predictions: dict[int, pd.DataFrame], path: Path, min_rows:
         ax.yaxis.set_major_formatter("{x:.0%}")
         ax.grid(axis="x", visible=True)
     axes[0].set_ylabel("Observed frequency")
-    fig.legend(lines, [label for _, label, _ in MODELS], loc="upper left", bbox_to_anchor=(0.005, 0.875), ncols=2, fontsize=9, labelcolor=INK_2, columnspacing=1.6)
+    style = dict(ncols=2, fontsize=9, labelcolor=INK_2, columnspacing=1.6)
+    names = [label for _, label, _ in MODELS]
+    fig.legend(lines, names, loc="upper left", bbox_to_anchor=(0.005, 0.875), **style)
     fig.savefig(path, dpi=160)
     plt.close(fig)

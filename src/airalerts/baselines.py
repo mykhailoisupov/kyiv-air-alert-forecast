@@ -50,5 +50,6 @@ def reference_forecasts(frame: pd.DataFrame, horizon_h: int) -> pd.DataFrame:
     out["const_28d"] = trailing_rate(t_s, y, everything, horizon_s, WINDOW)
     out["hour_28d"] = trailing_rate(t_s, y, hour, horizon_s, WINDOW, prior=out["const_28d"].to_numpy(), strength=10)
     out["hour_all"] = trailing_rate(t_s, y, hour, horizon_s, None)
-    out["markov_28d"] = trailing_rate(t_s, y, recent_onset, horizon_s, WINDOW, prior=out["const_28d"].to_numpy(), strength=10)
+    flat = out["const_28d"].to_numpy()
+    out["markov_28d"] = trailing_rate(t_s, y, recent_onset, horizon_s, WINDOW, prior=flat, strength=10)
     return out
