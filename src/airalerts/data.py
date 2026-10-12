@@ -168,7 +168,10 @@ def compare_with_open_data(events: pd.DataFrame, raw_dir: Path) -> dict:
     start, _ = local_to_utc(pd.to_datetime(published["dateTimeStart"]))
     end, _ = local_to_utc(pd.to_datetime(published["dateTimeEnd"]))
     published = pd.DataFrame({"start": start.dt.as_unit("s"), "end_published": end.dt.as_unit("s")})
-    overlap = events[events["start"] <= published["start"].max()]
+    # Compare only the period both tables cover (the events may be cut by --as-of).
+    cutoff = min(published["start"].max(), events["start"].max())
+    published = published[published["start"] <= cutoff]
+    overlap = events[events["start"] <= cutoff]
     merged = published.merge(overlap[["start", "end"]], on="start", how="outer", indicator=True)
     both = merged[merged["_merge"] == "both"]
     return {
