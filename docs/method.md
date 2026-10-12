@@ -105,7 +105,30 @@ Fixed before scoring:
 ## Status page
 
 `airalerts.run` writes `outputs/page.html`: inline CSS and SVG, a short inline script for hover
-read-outs, light and dark themes, and no network requests. `docs/page.png` is a browser screenshot of it.
+read-outs, light and dark themes, and no network requests. `docs/page.png` is a browser screenshot of it;
+`docs/hero.png` and `docs/replay.png` are crops of that screenshot.
+
+## Layout
+
+```
+src/airalerts/
+  data.py       download, clean, cross-check -> alert table in UTC
+  grid.py       as-of features and labels on a time grid
+  baselines.py  simple reference forecasts
+  model.py      the final model and the challengers
+  evaluate.py   walk-forward folds, scores, day-block bootstrap
+  now.py        live forecast for one instant
+  remaining.py  time left in a running alert
+  page.py       the status page
+  describe.py   descriptive tables and figures
+  report.py     evaluation figures
+  telegram.py   backfill of a public Telegram channel
+  text.py       text features and the with/without-text test
+  run.py        entry point for the whole pipeline
+tests/          data cleaning and leakage tests
+outputs/        metrics, tables, figures and the page for the snapshot of 12 October 2026, 18:00 UTC
+docs/           method, results, and the page screenshots
+```
 
 ## Reproduce
 
