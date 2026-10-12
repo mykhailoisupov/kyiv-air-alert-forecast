@@ -8,7 +8,9 @@ This project describes four and a half years of air raid alerts in Kyiv and test
 - **The night-time pattern has gone.** From 2023 to July 2026, an hour around 01:00 to 03:00 was under alert about 11% to 15% of the time and an afternoon hour 2% to 5%. Since August 2026 every clock hour sits between 12% and 33%.
 - **Alerts are about as long as before; the quiet between them collapsed.** The median alert lasts 35 minutes since August 2026, inside the 28 to 49 minute range of earlier periods. The median quiet gap fell to 1.4 hours from 5 to 11 hours.
 - **A new alert within the next few hours is forecastable, but only a little better than simple rules.** On the latest eight weeks, a logistic model beats a trailing hour-of-day climatology by 5% (1 h), 13% (3 h) and 19% (6 h) in Brier score. Against the strongest simple forecast the margin is 3% to 5%, with intervals that include zero.
-- **Anything anchored to the old base rate failed.** An all-history hour-of-day climatology scored 27% to 112% worse than the 28-day one, and boosted trees 18% to 86% worse.
+- **Long history misleads, and boosted trees did not help.** An all-history hour-of-day climatology scored
+  27% to 112% worse than the 28-day one. Boosted trees scored 9% to 22% worse than it. An earlier figure of
+  18% to 86% came mostly from a calibration wrapper around the trees, not from the trees.
 - **Air Force channel text helps a little at one hour and not beyond.** Adding counts of recent Telegram posts improved the 1 h forecast by 4% over the eight weeks. At 3 h and 6 h, and in the weeks since the reform, the change is within noise.
 
 ![Alerts and hours under alert per month](outputs/figures/monthly.png)
@@ -81,7 +83,8 @@ Brier score, with skill over the hour-of-day reference in brackets. Lower Brier 
 | Recent-onset rate, 28 days | 0.225 (+1.8%) | 0.225 (+10.1%) | 0.165 (+14.4%) |
 | Logistic, all history (first attempt) | 0.210 (+8.4%) | 0.215 (+14.0%) | 0.154 (+20.2%) |
 | **Logistic, last 16 weeks (final)** | 0.218 (+5.0%) | 0.217 (+13.1%) | 0.157 (+18.7%) |
-| Boosted trees, last 16 weeks | 0.270 (-17.8%) | 0.362 (-45.1%) | 0.358 (-85.5%) |
+| Boosted trees, last 16 weeks | 0.250 (-9.0%) | 0.277 (-11.1%) | 0.236 (-22.3%) |
+| Boosted trees inside a sigmoid calibration wrapper (first run) | 0.270 (-17.8%) | 0.362 (-45.1%) | 0.358 (-85.5%) |
 
 Final model, with 95% intervals:
 
@@ -104,7 +107,13 @@ The "best simple forecast" is whichever reference scored best on that period, ch
 - Over the full eight weeks the first attempt, trained on all history, scores slightly better than the final model at every horizon. Since the reform it does not: at 6 h it falls 6% behind the recent-onset rule, while the final model stays 12% ahead.
 - The first attempt forecasts too low. Since the reform its average 6 h forecast is 74% against an observed 87%; the final model averages 82%.
 - Calibration bin by bin is rough for both models, and the final model's highest 1 h forecasts were too high.
-- Boosted trees averaged a 12% forecast at 1 h against an observed 33%. They cannot extrapolate beyond the alert rates seen in training.
+- Boosted trees rank origins about as well as the logistic model at 1 h (ROC-AUC 0.63 for both) and worse at
+  3 h and 6 h, and they forecast too low: 27% on average at 1 h against an observed 33%. They score 9% to 22%
+  worse than the reference, with intervals at 1 h and 3 h that include zero.
+- **Correction.** The trees were first run inside a sigmoid calibration wrapper (`CalibratedClassifierCV`,
+  three folds). That version averaged a 12% forecast at 1 h with no ranking ability (ROC-AUC 0.51), and an
+  earlier version of this page said trees "cannot extrapolate". That explanation was never tested. Most of the
+  failure was the wrapper.
 
 **Sensitivity, run after the headline numbers.** Skill over the best simple forecast, by training window, with and without the climatology input:
 

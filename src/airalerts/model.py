@@ -34,7 +34,7 @@ class ModelSpec:
     name: str
     train_weeks: int | None  # None = every earlier origin
     reference_logits: tuple[str, ...] = ()  # reference forecasts fed in as extra features
-    estimator: str = "logistic"  # or "boosting"
+    estimator: str = "logistic"  # or "boosting", "boosting_uncalibrated"
     extra_log_features: tuple[str, ...] = ()  # further count-like columns, log-transformed
 
 
@@ -55,10 +55,14 @@ def feature_names(spec: ModelSpec) -> list[str]:
     return logged + list(RAW_FEATURES) + [f"logit({n})" for n in spec.reference_logits]
 
 
-def new_estimator(spec: ModelSpec) -> Pipeline | CalibratedClassifierCV:
-    if spec.estimator == "boosting":
+def new_estimator(spec: ModelSpec) -> Pipeline | CalibratedClassifierCV | HistGradientBoostingClassifier:
+    if spec.estimator in ("boosting", "boosting_uncalibrated"):
         trees = HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, random_state=0)
-        # Contiguous folds, so calibration never mixes neighbouring hours across train and holdout.
+        if spec.estimator == "boosting_uncalibrated":
+            return trees
+        # First run, kept so its numbers stay on record. cv=3 fits three copies of the trees, each on
+        # two thirds of the window, and a sigmoid calibrator for each on the held-out third. It scored
+        # far worse than the same trees without it, so it is not a fair test of boosted trees.
         return CalibratedClassifierCV(trees, method="sigmoid", cv=3)
     return make_pipeline(StandardScaler(), LogisticRegression(C=1.0, max_iter=2000))
 

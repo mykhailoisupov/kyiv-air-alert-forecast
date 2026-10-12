@@ -18,8 +18,10 @@ MODELS = [
     ModelSpec("logit_all_history", train_weeks=None),
     # Final: recent data only, with the trailing climatology as an input so the base rate can move.
     ModelSpec("logit_16w", train_weeks=16, reference_logits=("hour_28d",)),
-    # Challenger: boosted trees on the same inputs, recalibrated.
+    # Challenger as first run: boosted trees on the same inputs inside a sigmoid calibration wrapper.
     ModelSpec("boosting_16w", train_weeks=16, reference_logits=("hour_28d",), estimator="boosting"),
+    # The same trees without the wrapper, added after a review traced most of the failure to it.
+    ModelSpec("boosting_16w_uncalibrated", 16, ("hour_28d",), estimator="boosting_uncalibrated"),
 ]
 FINAL = "logit_16w"
 
