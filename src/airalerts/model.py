@@ -35,6 +35,7 @@ class ModelSpec:
     train_weeks: int | None  # None = every earlier origin
     reference_logits: tuple[str, ...] = ()  # reference forecasts fed in as extra features
     estimator: str = "logistic"  # or "boosting"
+    extra_log_features: tuple[str, ...] = ()  # further count-like columns, log-transformed
 
 
 def logit(p: np.ndarray) -> np.ndarray:
@@ -43,14 +44,15 @@ def logit(p: np.ndarray) -> np.ndarray:
 
 
 def design(frame: pd.DataFrame, spec: ModelSpec) -> np.ndarray:
-    columns = [np.log1p(frame[name].to_numpy(dtype=float)) for name in LOG_FEATURES]
+    columns = [np.log1p(frame[name].to_numpy(dtype=float)) for name in LOG_FEATURES + spec.extra_log_features]
     columns += [frame[name].to_numpy(dtype=float) for name in RAW_FEATURES]
     columns += [logit(frame[name].to_numpy(dtype=float)) for name in spec.reference_logits]
     return np.column_stack(columns)
 
 
 def feature_names(spec: ModelSpec) -> list[str]:
-    return [f"log1p({n})" for n in LOG_FEATURES] + list(RAW_FEATURES) + [f"logit({n})" for n in spec.reference_logits]
+    logged = [f"log1p({n})" for n in LOG_FEATURES + spec.extra_log_features]
+    return logged + list(RAW_FEATURES) + [f"logit({n})" for n in spec.reference_logits]
 
 
 def new_estimator(spec: ModelSpec) -> Pipeline | CalibratedClassifierCV:
