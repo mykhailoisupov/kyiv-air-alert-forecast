@@ -131,14 +131,14 @@ uv run pytest
 
 ## The project was built in conversation with an AI assistant
 
-| Part of the conversation | Log |
+| Log | Covers |
 |---|---|
-| Research into existing work | not added yet |
-| Plan and first build | not added yet |
-| Final model and text experiment | not added yet |
-| Review follow-up | not added yet |
+| [01-research.txt](conversation/01-research.txt) | Research into existing work |
+| [02-plan-and-build.txt](conversation/02-plan-and-build.txt) | Plan, build, final model, text experiment |
+| [03-review-follow-up.txt](conversation/03-review-follow-up.txt) | Corrections, live forecast, status page |
+| [04-presentation-and-log.txt](conversation/04-presentation-and-log.txt) | This README and these logs |
 
-*Exported logs go in [conversation/](conversation/).*
+*Exported from the stored session transcript; tool output is shortened ([details](conversation/README.md)).*
 
 ## Read more
 

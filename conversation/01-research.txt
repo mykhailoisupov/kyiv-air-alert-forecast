@@ -1,0 +1,640 @@
+Conversation log, part 1 of 4: Research into existing work
+2026-10-12 17:23:38 to 2026-10-12 18:02:23 UTC
+
+Exported mechanically from the Claude Code session transcript stored on disk.
+Verbatim: user messages, assistant replies and subagent reports.
+Shortened: tool inputs, and tool output after 40 lines.
+Left out: images, the assistant's private reasoning, harness system messages, internal
+identifiers and the account email.
+
+====================================================================================================
+USER  [2026-10-12 17:23:38 UTC]
+====================================================================================================
+i want to create Time Series Analysis of air raid alerts in Ukraine. find existing approaches and solutions to learn from.
+
+====================================================================================================
+TOOL CALL: Skill  [2026-10-12 17:23:43 UTC]
+====================================================================================================
+{
+ "skill": "anthropic-skills:deep-research",
+ "args": "Existing approaches and solutions for time series analysis and forecasting of air raid alerts in Ukraine: datasets and APIs (alerts.in.ua, ukrainealarm, Vadimkin/ukrainian-air-raid-sirens-dataset, Kaggle), GitHub projects, academic papers, modeling methods (statistical, ML, point-process, spatio-temporal), features used, evaluation practices, and lessons learned"
+}
+
+====================================================================================================
+TOOL RESULT: Skill  [2026-10-12 17:23:43 UTC]
+====================================================================================================
+Launching skill: anthropic-skills:deep-research
+
+====================================================================================================
+NOTICE  [2026-10-12 17:23:43 UTC]
+====================================================================================================
+Skill instructions loaded: Base directory for this skill: C:\Users\mykha\.claude\skills\synced\f2276226-fc91-42ce-a224-04959a1a3377_1a6f0374-c534-418d-86d2-0d5042f7cad4\deep-research
+
+====================================================================================================
+TOOL CALL: Glob  [2026-10-12 17:23:44 UTC]
+====================================================================================================
+{
+ "pattern": "**/*"
+}
+
+====================================================================================================
+TOOL RESULT: Glob  [2026-10-12 17:23:44 UTC]
+====================================================================================================
+No files found
+
+====================================================================================================
+TOOL CALL: Bash  [2026-10-12 17:23:57 UTC]
+====================================================================================================
+Create research notes and reports folders
+$ mkdir -p "/c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes/Ukraine air raid alert forecasting" "/c/Users/mykha/VSCodeProjects/air-alert-pred-agent/reports" && ls -la "/c/Users/mykha/VSCodeProjects/air-alert-pred-agent" "/c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes"
+
+====================================================================================================
+TOOL RESULT: Bash  [2026-10-12 17:23:58 UTC]
+====================================================================================================
+/c/Users/mykha/VSCodeProjects/air-alert-pred-agent:
+total 4
+drwxr-xr-x 1 mykha 197609 0 Oct 12 20:23 .
+drwxr-xr-x 1 mykha 197609 0 Oct 12 20:15 ..
+drwxr-xr-x 1 mykha 197609 0 Oct 12 20:23 reports
+drwxr-xr-x 1 mykha 197609 0 Oct 12 20:23 research_notes
+
+/c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes:
+total 0
+drwxr-xr-x 1 mykha 197609 0 Oct 12 20:23 .
+drwxr-xr-x 1 mykha 197609 0 Oct 12 20:23 ..
+drwxr-xr-x 1 mykha 197609 0 Oct 12 20:23 Ukraine air raid alert forecasting
+
+====================================================================================================
+TOOL CALL: Agent  [2026-10-12 17:24:19 UTC]
+====================================================================================================
+Alert data sources and APIs (general-purpose)
+Research the data sources, APIs and historical datasets available for Ukrainian air raid alerts (повітряна тривога), plus the auxiliary datasets that could serve as explanatory features, as of October 2026.
+
+Objective: Compile a dense, factual inventory of every usable data source for building a time series analysis / forecasting project on air raid alerts in Ukraine. For each source, record: what it contains, time coverage (start date, whether still updated), spatial granularity (oblast / raion / hromada / city), temporal granularity (event start-end timestamps vs. snapshots), alert types distinguished (air raid, artillery shelling, urban fights, chemical, nuclear), access method (REST API, webhook, CSV dump, Telegram scraping), authentication / token requirements, rate limits, licence and terms of use, known data quality problems, and the exact URL. This inventory is for someone who will actually download and model the data, so precise schema details (column names, timezone conventions, how ongoing alerts are represented) matter more than general descriptions.
+
+Key questions:
+- What official and semi-official live APIs exist? Cover at minimum alerts.in.ua (API docs, token request process, history endpoints), api.ukrainealarm.com (Ukraine Alarm / Ajax Systems "Повітряна тривога" app), alerts.com.ua, sirens.in.ua, and the official Telegram channel @air_alert_ua. What does each expose, and which have historical endpoints as opposed to current-state only?
+- What historical datasets exist as downloadable files? Cover at minimum the GitHub repository Vadimkin/ukrainian-air-raid-sirens-dataset (its files, the "official" vs "volunteer" data splits, schema, update frequency, licence), any Kaggle datasets on Ukrainian air raid alerts / sirens, Hugging Face datasets, and data.gov.ua or other open-data portal entries. Which is the most complete and best maintained right now?
+- What are the known data quality issues and structural breaks? Examples to verify: changes in alert granularity over time (oblast-level alerts vs. the shift to raion / hromada-level alerting in specific oblasts and when), permanently "on" regions such as Luhansk oblast and Crimea, missing end timestamps, duplicate or overlapping events, timezone handling (UTC vs. Europe/Kyiv, DST), differences between official and volunteer-collected records, and how the alert-issuing policy itself changed (for example alerts triggered by MiG-31K take-offs causing nationwide alerts).
+- What auxiliary datasets could be joined as features? Cover: the Kaggle dataset "Massive Missile Attacks on Ukraine" (piterfm) with missile and Shahed/UAV launch and interception counts; ACLED conflict event data for Ukraine; Ukrainian Air Force daily reports; Telegram monitoring channels that report launches and aircraft take-offs; ISW daily assessments; weather data; and any dataset of Russian strategic aviation activity. For each, note coverage, granularity, access terms and how reliably it can be aligned in time with alerts.
+- Are there existing ready-made data pipelines, Python packages or client libraries for these APIs (for example PyPI packages wrapping alerts.in.ua or ukrainealarm), and are they maintained?
+
+Suggested sources:
+- Primary documentation: devs.alerts.in.ua, api.ukrainealarm.com Swagger docs, the README and data files of github.com/Vadimkin/ukrainian-air-raid-sirens-dataset, Kaggle dataset pages and their data cards
+- GitHub search for repositories and client libraries related to "air raid alert Ukraine", "повітряна тривога", "alerts.in.ua", "ukrainealarm"
+- PyPI and npm package pages for API wrappers
+- Ukrainian-language sources (dou.ua, Ukrainian tech media, official announcements from the Ministry of Digital Transformation / Ajax Systems / stfalcon) on how the alert system works and how the alerting rules changed over time
+- Wikipedia / Ukrainian Wikipedia articles on the air raid alert system in Ukraine for the policy timeline
+
+Constraints:
+- Geographic scope is Ukraine only; temporal scope is from 24 February 2022 to the present (October 2026). Flag clearly which sources are stale or discontinued versus still actively updated, with the last-update date where you can find it.
+- Search in both English and Ukrainian.
+- Only report facts you verified from a source; where you could not verify a schema detail or a date, say so explicitly rather than guessing.
+- Do not cover modelling methods or academic papers in depth; other researchers are handling those. Mention a project or paper only when it is the origin of a dataset.
+
+Save your output notes to C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\data_sources_and_apis.md
+
+**As a first step, you must read C:\Users\mykha\.claude\skills\synced\f2276226-fc91-42ce-a224-04959a1a3377_1a6f0374-c534-418d-86d2-0d5042f7cad4\deep-research\references\researcher.md for instructions on how to conduct research.**
+
+====================================================================================================
+TOOL CALL: Agent  [2026-10-12 17:24:39 UTC]
+====================================================================================================
+Open-source alert analysis projects (general-purpose)
+Research existing open-source and practitioner projects that analyse or predict air raid alerts in Ukraine, as of October 2026: GitHub repositories, Kaggle notebooks, student / course projects, hackathon entries, blog posts, dashboards and deployed products.
+
+Objective: Compile a dense catalogue of concrete, inspectable solutions that someone starting a "time series analysis and prediction of air raid alerts in Ukraine" project can learn from. For each project record: URL, author / organisation, date and whether it is maintained, what question it answers (descriptive analysis vs. forecasting, and forecasting what exactly: probability of an alert in region X in the next N hours, number of alerts per day, alert duration, time until next alert), the data it uses, the features engineered, the models used, how it was evaluated and the reported metrics, the tech stack and architecture (data ingestion, storage, training, serving), and what worked or did not work according to the authors. Where code is available, look at the actual code and notebooks rather than only the README, so you can report specifics such as the prediction target definition, the train/test split method and the feature list.
+
+Key questions:
+- Which GitHub repositories attempt to forecast or predict air raid alerts in Ukraine? Search terms to try in English and Ukrainian: "air raid alert prediction Ukraine", "air alarm prediction", "air alert forecast", "siren prediction Ukraine", "прогнозування повітряних тривог", "передбачення тривог", "alarm prediction ISW weather". Note that a well-known family of student projects (associated with Ukrainian university courses, for example at Kyiv-Mohyla Academy / Kyiv School of Economics / UCU) builds alarm prediction systems combining ISW (Institute for the Study of War) daily report text, hourly weather forecasts and alert history; find several of these, compare their designs and report what results they obtained.
+- Which Kaggle notebooks and datasets-with-notebooks do exploratory or time series analysis of Ukrainian air raid sirens? What patterns do they report: hour-of-day and day-of-week effects, seasonality, regional differences, duration distributions, trends across the years 2022 to 2026, clustering of nationwide alerts?
+- Which data journalism pieces and public dashboards analyse alert statistics (for example Texty.org.ua, Ukrainska Pravda, Slovo i Dilo, Kyiv Independent, Reuters / Bloomberg graphics, alerts.in.ua statistics pages, air-alarms.in.ua or similar statistics sites)? What analytical framings and visualisations do they use that are worth reusing?
+- Are there deployed products, Telegram bots or apps that claim to predict alerts or attack risk (for example bots that forecast the likelihood of a massive missile attack, or that track strategic bomber take-offs)? How do they work, what signals do they rely on, and is there any evidence about their accuracy?
+- Are there projects using LLMs or agentic approaches (for example an LLM agent that reads Telegram monitoring channels or news and produces alert-risk forecasts)? The user's project folder is named "air-alert-pred-agent", so agent-based designs are of particular interest.
+- Across all the projects, what are the recurring design choices, the recurring mistakes (for example data leakage through random train/test splits on time series, predicting a trivially persistent target, ignoring class imbalance, using features not available at prediction time) and the honest performance ceiling people report?
+
+Suggested sources:
+- GitHub search (repositories, code and topics) and the READMEs, notebooks and source files of the repositories you find
+- Kaggle search for notebooks and datasets about Ukraine air raid sirens / alerts
+- Medium, Towards Data Science, Habr-alternatives, dou.ua, and personal blogs describing such projects
+- Ukrainian media data-journalism sections and public statistics dashboards
+- Hugging Face Spaces and models, Streamlit / Gradio demos
+- Telegram bot descriptions and product pages for alert-related apps
+
+Constraints:
+- Geographic scope is Ukraine; temporal scope is February 2022 to October 2026. Record each project's date and last activity so stale work can be told apart from current work.
+- Search in both English and Ukrainian.
+- Prioritise projects with inspectable code or a written methodology over ones that only make claims. Clearly separate what authors report from what you could verify in the code.
+- Do not cover peer-reviewed academic papers in depth (another researcher is handling those) and do not produce a general tutorial on forecasting methods; focus on what these specific projects did.
+- Do not catalogue raw data sources in detail (another researcher is handling data sources and APIs); just name which data each project used.
+
+Save your output notes to C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\open_source_projects.md
+
+**As a first step, you must read C:\Users\mykha\.claude\skills\synced\f2276226-fc91-42ce-a224-04959a1a3377_1a6f0374-c534-418d-86d2-0d5042f7cad4\deep-research\references\researcher.md for instructions on how to conduct research.**
+
+====================================================================================================
+TOOL CALL: Agent  [2026-10-12 17:25:00 UTC]
+====================================================================================================
+Academic literature on alerts (general-purpose)
+Research the academic and scientific literature on air raid alerts in Ukraine and on closely analogous alert / attack time series elsewhere, as of October 2026.
+
+Objective: Compile a dense literature review of peer-reviewed papers, preprints, theses and conference papers that (a) analyse or forecast Ukrainian air raid alerts or missile / drone attacks as time series, (b) use Ukrainian air raid alert data as a variable in other research, or (c) do the same for the nearest analogous setting, especially rocket alerts in Israel. For each work record: full citation, year, venue, link (DOI or arXiv), the research question, the data used (source, period, spatial and temporal resolution), the method, the evaluation design and metrics, the main quantitative findings, and the stated limitations. The reader intends to build their own time series analysis of Ukrainian air raid alerts and wants to know what has already been established, which methods have been tried, and where the gaps are.
+
+Key questions:
+- Which papers directly model or forecast Ukrainian air raid alerts (alarms, sirens) or Russian missile and Shahed / UAV attacks on Ukraine? Search in English and Ukrainian, including Ukrainian university journals and conference proceedings (for example "прогнозування повітряних тривог", "аналіз часових рядів повітряних тривог", "machine learning air raid alert prediction Ukraine", "forecasting missile attacks Ukraine", "air alarm time series Ukraine", "LSTM air raid", "spatio-temporal air alert"). Include arXiv, IEEE Xplore, Springer, CEUR-WS workshop proceedings (many Ukrainian computer science conferences publish there), ResearchGate, and Ukrainian repositories (ekmair.ukma.edu.ua, er.ucu.edu.ua, KSE, KPI, Lviv Polytechnic). What methods did they use and what accuracy did they report?
+- What statistical regularities of the alerts have been documented in the literature: diurnal and weekly patterns, seasonality (for example winter campaigns against energy infrastructure), long-run trends across 2022 to 2026, heavy-tailed duration distributions, spatial correlation and propagation of alerts between oblasts, burstiness or self-excitation, and regime changes linked to changes in Russian tactics (mass Shahed waves, ballistic missiles, glide bombs)?
+- Which studies use air raid alert data as an explanatory or outcome variable in other fields, and what does that reveal about data handling? Examples: effects on sleep and mental health, education and learning loss (time spent in shelters), labour productivity and economic activity, mobility data, electricity demand, alert fatigue and shelter-seeking compliance (for example studies using smartphone mobility data to measure response to alerts). Note how each constructed its alert exposure measures.
+- What is the analogous literature for Israel's rocket alert system (Red Alert / Tzeva Adom, Home Front Command) and other settings: papers forecasting rocket alerts or analysing their temporal and spatial structure, including point-process or Hawkes-process models of rocket fire, and any work on alert compliance and alert fatigue that used time series methods? Which of these methods transfer to the Ukrainian case?
+- What does the broader conflict-forecasting literature offer that is directly applicable: ViEWS (Violence Early-Warning System) and its prediction competitions, ACLED-based forecasting (including ACLED CAST), work applying Hawkes / self-exciting point processes to conflict events and terrorism, and any forecasting work specific to the Russia–Ukraine war (for example forecasting shelling or fire events from VIIRS / FIRMS satellite data, or Bellingcat / Economist war-fire models)? Summarise the methods, the evaluation standards and the known performance limits.
+- What gaps and open problems do authors identify, and what has apparently not been done yet?
+
+Suggested sources:
+- Google Scholar, Semantic Scholar, arXiv, SSRN, OpenAlex, IEEE Xplore, SpringerLink, ScienceDirect, PubMed (for the health and sleep studies), CEUR-WS.org
+- Ukrainian institutional repositories and journals, and Ukrainian-language theses (bachelor and master) on alert prediction
+- Journal of Peace Research, International Interactions, Journal of Conflict Resolution and the ViEWS project pages for conflict forecasting
+- NBER / CEPR / Kyiv School of Economics working papers for economics studies that use alert data
+
+Constraints:
+- Primary focus is Ukraine from February 2022 to October 2026; analogues (Israel, general conflict forecasting) are in scope only insofar as the methods transfer, so keep them proportionally shorter.
+- Search in both English and Ukrainian.
+- Report only what you verified in the source; give exact figures with their context (which metric, which test period, which region) and do not round up vague claims into numbers. Distinguish peer-reviewed work from preprints and student theses, and note where a reported accuracy looks inflated by evaluation design (for example random splits of time-ordered data or a highly imbalanced target).
+- Do not catalogue GitHub repositories, Kaggle notebooks or API documentation; other researchers are handling those. Mention code only when it accompanies a paper.
+
+Save your output notes to C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\academic_literature.md
+
+**As a first step, you must read C:\Users\mykha\.claude\skills\synced\f2276226-fc91-42ce-a224-04959a1a3377_1a6f0374-c534-418d-86d2-0d5042f7cad4\deep-research\references\researcher.md for instructions on how to conduct research.**
+
+====================================================================================================
+TOOL CALL: Agent  [2026-10-12 17:25:36 UTC]
+====================================================================================================
+Modelling and evaluation methodology (general-purpose)
+Research which time series analysis and forecasting methods are appropriate for data shaped like Ukrainian air raid alerts, and how such forecasts should be evaluated, as of October 2026.
+
+Background on the data so you can judge fit: an air raid alert record is an interval event with a region, a start timestamp and an end timestamp. There are roughly 25 oblast-level regions (plus finer raion / hromada-level alerts in some oblasts), data runs from February 2022 to the present, events are irregular and bursty, durations are heavy-tailed, regions are strongly spatially correlated (alerts propagate between neighbouring oblasts and sometimes cover the whole country at once), there are strong hour-of-day effects, and the generating process is adversarial and non-stationary because the attacker changes tactics over time. The data can be represented in several ways: as a marked spatio-temporal point process of alert onsets, as a binary on/off state series per region at a fixed resolution (for example hourly), as counts or total alert-minutes per region per day, or as a sequence of durations and inter-arrival gaps.
+
+Objective: Compile a dense, practical methods guide grounded in the published methodology literature and in authoritative library documentation. For each family of methods, explain what representation of the data it needs, what question it answers, its assumptions and how well they fit this data, its main failure modes, the mature open-source implementations (library names, current maintenance status and versions as of 2026), and the key references. Also cover evaluation design in equal depth, because weak evaluation is the most common flaw in this kind of project. The reader is technically capable and wants to choose a sound analysis plan and a baseline-to-advanced modelling ladder.
+
+Key questions:
+- Exploratory and descriptive analysis: what are the standard techniques for characterising event / interval time series like this? Cover seasonal decomposition with multiple seasonalities (STL, MSTL), autocorrelation and cross-correlation between regions, spectral analysis, inter-arrival time and duration distribution fitting (heavy tails, survival curves, Kaplan–Meier), burstiness and memory coefficients, change-point and regime detection (PELT / the ruptures library, Bayesian online change-point detection), and lead–lag or propagation analysis across regions.
+- Count and binary time series models: what does the literature recommend for daily counts or hourly binary states? Cover Poisson and negative binomial autoregression (INGARCH, the R package tscount), zero-inflated models, logistic and dynamic binary models, Markov and semi-Markov models, hidden Markov models and regime-switching models, state-space models, and intermittent-demand methods (Croston, TSB, ADIDA) which target sparse series. When does each apply?
+- Point-process models: how are temporal and spatio-temporal Hawkes (self-exciting) processes, multivariate Hawkes processes with cross-region excitation, log-Gaussian Cox processes, and neural temporal point processes (for example RMTPP, Neural Hawkes, Transformer Hawkes, and the EasyTPP benchmark) used for event forecasting in comparable domains such as crime, earthquakes (ETAS) and conflict? What are the practical libraries (for example tick, EasyTPP, PyTorch-based implementations) and their maintenance status, and what are the pitfalls?
+- Survival and duration modelling: how can time-to-next-alert and alert duration be modelled (Cox proportional hazards, accelerated failure time, random survival forests, discrete-time hazard models, deep survival models), and what libraries support this (lifelines, scikit-survival, pycox)?
+- Machine learning and deep learning forecasters: what is the current evidence on gradient-boosted trees with lag and calendar features (LightGBM, XGBoost, CatBoost) versus deep models (LSTM / GRU, Temporal Fusion Transformer, N-BEATS / N-HiTS, PatchTST, spatio-temporal graph neural networks such as DCRNN and STGCN) versus time series foundation models (Chronos / Chronos-2 / Chronos-Bolt, TimesFM, Moirai, Lag-Llama, TimeGPT, TabPFN-TS) for sparse, intermittent, event-driven series? Summarise the benchmark evidence (M5 competition findings on intermittent series, GIFT-Eval, fev-bench, the "Are Transformers Effective for Time Series Forecasting?" debate) and say what this implies for a small panel of about 25 bursty binary series. Cover the practical frameworks: Nixtla (statsforecast, mlforecast, neuralforecast, hierarchicalforecast), Darts, sktime, GluonTS, AutoGluon-TimeSeries, PyTorch Forecasting, Prophet / NeuralProphet.
+- Hierarchical and spatial structure: how should country → oblast → raion structure and neighbour dependence be handled (hierarchical reconciliation such as MinT, spatial lag features, graph-based models, panel / global models trained across all regions)?
+- Exogenous signals and text: what does the literature say about incorporating exogenous covariates and unstructured text (news, Telegram, situation reports) into forecasts, including recent work on LLM-based and agentic forecasting and context-aided forecasting (for example the "Context is Key" benchmark, LLM forecasting-tournament results such as ForecastBench, and retrieval-augmented forecasting systems)? What is the measured benefit and what are the known failure modes, especially temporal leakage from an LLM's training data and from retrieved documents?
+- Evaluation: what is the correct evaluation protocol? Cover rolling-origin / expanding-window backtesting and time series cross-validation with gaps (purging and embargo), why random splits leak, strong naive baselines that must be beaten (persistence, same hour last week, climatological hour-of-week base rate, seasonal naive), metrics for rare binary events (PR-AUC versus ROC-AUC, Brier score and Brier skill score against climatology, log loss, calibration and reliability diagrams, the weather-forecasting verification tradition including POD / FAR / CSI / equitable threat score), metrics for probabilistic count forecasts (CRPS, pinball loss, MASE and its problems on intermittent series, scaled errors such as RMSSE), point-process evaluation (log-likelihood, time-rescaling / residual analysis), and how to evaluate under distribution shift and concept drift. Also cover how forecast horizon and lead time change what is achievable, and how to define a prediction target that is not trivially solved by persistence (for example predicting alert onset rather than alert state).
+- Non-stationarity and adversarial dynamics: what methods exist for handling concept drift and regime change (sliding-window retraining, online learning such as the river library, drift detection, time-decayed weighting, conformal prediction for time series under shift), and what is the realistic limit of predictability for an adversary-driven process?
+
+Suggested sources:
+- Textbooks and review papers: Hyndman and Athanasopoulos "Forecasting: Principles and Practice" (3rd edition, otexts.com/fpp3), the "Forecasting: theory and practice" encyclopedic review (Petropoulos et al., International Journal of Forecasting 2022), reviews of Hawkes processes (Reinhart 2018 "A Review of Self-Exciting Spatio-Temporal Point Processes and Their Applications"; Laub, Taimre and Pollett), Mohler et al. on self-exciting point process models of crime, Jolliffe and Stephenson "Forecast Verification", Gneiting and Raftery on proper scoring rules
+- Peer-reviewed papers and arXiv preprints for the foundation-model, neural point process, spatio-temporal GNN and LLM-forecasting evidence, including the benchmark papers themselves
+- Official documentation and GitHub repositories of the libraries named above, to confirm what they support and whether they are actively maintained in 2026
+- M5 competition results papers and the intermittent-demand forecasting literature (Croston, Syntetos and Boylan, Kourentzes)
+
+Constraints:
+- Keep everything tied to the 
+[... shortened: 1,222 more characters, about 7 more lines]
+
+====================================================================================================
+TOOL RESULT: Agent  [2026-10-12 17:25:36 UTC]
+====================================================================================================
+[started in the background]
+
+====================================================================================================
+TOOL RESULT: Agent  [2026-10-12 17:25:36 UTC]
+====================================================================================================
+[started in the background]
+
+====================================================================================================
+TOOL RESULT: Agent  [2026-10-12 17:25:36 UTC]
+====================================================================================================
+[started in the background]
+
+====================================================================================================
+TOOL RESULT: Agent  [2026-10-12 17:25:36 UTC]
+====================================================================================================
+[started in the background]
+
+====================================================================================================
+ASSISTANT  [2026-10-12 17:25:41 UTC]
+====================================================================================================
+Research is underway on four parallel tracks:
+
+1. **Data sources and APIs** — alerts.in.ua, Ukraine Alarm, historical dumps, known data-quality breaks, and auxiliary datasets (missile/UAV launches, ACLED, weather).
+2. **Open-source and practitioner projects** — GitHub repos, Kaggle notebooks, the ISW + weather + alert-history student projects, dashboards, bots, and any LLM/agent-based designs.
+3. **Academic literature** — papers on Ukrainian alerts directly, studies that use alert data as a variable, and analogues such as Israel's rocket alerts and conflict forecasting.
+4. **Modelling and evaluation methodology** — which methods fit bursty, spatially correlated interval events, and how to evaluate without leakage or trivially persistent targets.
+
+Notes will land in `research_notes/Ukraine air raid alert forecasting/`. Once all four finish, I'll have them synthesized into a single report at `reports/Ukraine air raid alert forecasting.md` and summarize it for you here.
+
+====================================================================================================
+SUBAGENT REPORT  [2026-10-12 17:41:39 UTC]
+====================================================================================================
+The notes are written to `C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\data_sources_and_apis.md`, covering all five key questions in the required Takeaway / Cited Findings / Inferences / Gaps layout. Besides reading documentation, I downloaded the main data files and profiled them, so many schema and quality facts are computed rather than quoted.
+
+## Findings the report writer should not miss
+
+- **The official feed has stopped.** The official Telegram channel @air_alert_ua shows its last post as 2026-09-07 06:09:04 UTC (checked 2026-10-12). The "official" file in Vadimkin/ukrainian-air-raid-sirens-dataset is parsed from that channel and ends at 2026-09-07 05:28 UTC; two open GitHub issues confirm it. I found no announcement explaining the stop.
+- **The official file is duplicated.** `official_data_en.csv` has 299,275 rows but only 185,430 unique events: every event from 2022-03-15 to 2026-01-25 appears exactly twice, and the file is not sorted. After de-duplicating on the full row there are no overlaps or negative durations.
+- **The volunteer file is current but coarse.** `volunteer_data_en.csv` runs from 2022-02-25 to 2026-10-12, oblast-level only, with 5% of rows flagged `naive` (end time imputed as start + 30 minutes).
+- **Oblast-to-raion break.** In the data, oblast-level alerts collapse between August and early November 2025 (last oblast-level alerts on 2–4 November 2025 for most oblasts), ahead of the 15 December 2025 government announcement. From 2026 only Kyiv City remains at "oblast" level. Raion-level events run at roughly five times the earlier monthly counts.
+- **Yellow / red alert levels.** Announced 2 September 2026; the first Kyiv alert carrying a level is 2026-09-07 17:39 Kyiv time, the same day the official channel went silent.
+- **Kyiv has an authoritative open dataset.** The KMDA file on data.kyivcity.gov.ua (also listed on data.gov.ua) has 2,641 alerts from 2022-02-28 to 2026-10-12, with level and cause since the reform. Its timestamps are Europe/Kyiv local with no offset; they match the Vadimkin Kyiv City rows to within 1–3 seconds after a UTC shift.
+- **Unflagged imputation and omissions.** The official file closes orphaned alerts at start + 1 hour with no flag (255 such events), never writes ongoing alerts, and omits the permanent Luhansk (from 2022-04-04) and Crimea (from 2022-12-10) alerts. 897 events exceed 24 hours, the longest being Lypetska hromada at 14,497 hours.
+
+## Live APIs
+
+| Source | Status | History | Access |
+|---|---|---|---|
+| alerts.in.ua | Active; richest schema (alert type, red/yellow level, threat types incl. `mig31k_departure`) | `month_ago` per region only, 2 requests/min | Token via form; 8–10 requests/min soft limit |
+| api.ukrainealarm.com | Active; official app backend | Last 25 alerts per region; webhook available | API key via form; Swagger blocked by Cloudflare |
+| siren.pp.ua | Active; keyless public wrapper of UkraineAlarm | None | No key |
+| Kyiv Digital open API | Active; Kyiv city only | `/history` endpoint | No key |
+| alerts.com.ua | Stale: state timestamps frozen at Nov–Dec 2025; repo last pushed 2023 | 404 | Returned data without a key |
+| @air_alert_ua | Silent since 2026-09-07 | Public web preview | None |
+| sirens.in.ua | Unreachable on 2026-10-12 | Unknown | Unknown |
+
+No source offers a national raion-level archive after 2026-09-07; continuing the series means polling alerts.in.ua or scraping the eTryvoga channel.
+
+## Auxiliary datasets
+
+- **piterfm "Massive Missile Attacks on Ukraine" (Kaggle):** version 214, updated 2026-10-10, CC BY-NC-SA 4.0; the full column list is in the notes. Its card warns that the Air Force stopped reporting some missile counts from 10 August 2026, and a separate source dates thinner Shahed reporting from about 5 May 2026.
+- **Telegram channels (@kpszsu, @war_monitor, @monitoringwar, @eRadarrua):** the only minute-level sources; all were live and readable through public `t.me/s/` previews.
+- **ACLED:** date-only events; API access needs the Research tier, which depends on an institutional email.
+- **VIINA:** ODbL, updated daily, and includes a `t_airalert` label, but it is derived from news text.
+- **Open-Meteo:** hourly weather; ERA5 lags 5 days, IFS does not.
+- **ISW:** daily report text only; no API found.
+- **Strategic aviation:** no structured dataset of bomber or MiG-31K sorties was found.
+
+## Client libraries
+
+The official `alerts_in_ua` Python package (last release 2025-08-10) is the only wrapper that exposes history. All UkraineAlarm wrappers date from 2022 to January 2024 and predate alert levels. Five 2026 GitHub forecasting projects were found; four build on the Vadimkin files, and `GeoChernykh/AlarmForecast` does not name its alarm source.
+
+## Not verified
+
+- The MiG-31K policy statements rest on search-result summaries; the Pravda and The Page articles returned 403. I found no evidence of a formal rule change after 2023.
+- The names and dates of the 13 raion-level pilot regions, and the legal instrument of the yellow / red reform ("resolution №1092" appears only in a GitHub issue).
+- api.ukrainealarm.com rate limits and terms, the alerts.in.ua token form, and the Kyiv Digital API docs (JavaScript-rendered or blocked).
+- Whether `official_data_uk.csv` has the same duplication; I only profiled the `_en` file.
+- The timezone of `time_start` / `time_end` in the piterfm dataset.
+
+I went well past the suggested 15 tool calls because of the breadth of the brief and the file profiling.
+
+====================================================================================================
+ASSISTANT  [2026-10-12 17:41:46 UTC]
+====================================================================================================
+The data-sources track is finished; the other three (open-source projects, academic literature, methodology) are still running, and the report gets written once they're in.
+
+Early findings worth knowing now, since they affect how you'd set up the data:
+
+- **The official feed stopped on 2026-09-07.** The @air_alert_ua Telegram channel has been silent since then, and the "official" file in `Vadimkin/ukrainian-air-raid-sirens-dataset` ends on the same day. No announcement explaining it was found.
+- **No national raion-level archive exists after that date.** Continuing the series means polling alerts.in.ua yourself or scraping a Telegram channel. The volunteer file is still current, but only at oblast level.
+- **The official CSV is duplicated.** `official_data_en.csv` has 299,275 rows but only 185,430 unique events, so it needs de-duplicating before any counting.
+- **There is a structural break in late 2025.** Oblast-level alerts were replaced by raion-level ones between August and early November 2025, and raion-level event counts run about five times the earlier monthly counts.
+- **Alert levels (yellow/red) were added in September 2026**, which is a second break in what an "alert" means.
+- **Kyiv has its own open dataset** (KMDA, on data.kyivcity.gov.ua) running from 2022-02-28 to today, with level and cause for recent alerts.
+
+Full details are in `research_notes/Ukraine air raid alert forecasting/data_sources_and_apis.md`.
+
+====================================================================================================
+NOTICE  [2026-10-12 17:41:46 UTC]
+====================================================================================================
+Background task: Agent "Alert data sources and APIs" finished
+
+====================================================================================================
+SUBAGENT REPORT  [2026-10-12 17:43:39 UTC]
+====================================================================================================
+Notes saved to `C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\academic_literature.md` (about 10,400 words, six key-question sections, each with Takeaway / Cited Findings / Inferences / Gaps). Every finding carries a source link and a tag: [FT] full text read, [ABS] abstract only, [SNIP] search-summary only.
+
+## Headline findings
+
+**1. Direct forecasting literature is almost empty.** Only two works forecast Ukrainian alerts, and neither is peer-reviewed.
+- **Pavlyshenko & Pavlyshenko, arXiv:2411.14625 (Nov 2024, preprint).** Random Forest per oblast on Klymenko's dataset at 1-minute resolution (25 Mar 2022 – 6 Nov 2024), chronological split at 2024-07-01, four oblasts.
+  - 5-minute horizon, positive class: Lvivska F1 0.70 (AUC 0.96, accuracy 0.99), Vinnytska F1 0.81, Kyivska F1 0.80, Kharkivska F1 0.86.
+  - 15-minute horizon: Lvivska recall falls to 0.38 (F1 0.49).
+  - These scores look inflated. The target is effectively "alert active at t+H", and the top feature is the region's own unlagged current-alert duration, so the model mostly predicts continuation.
+  - Positives are only 1.4% of test minutes in Lvivska, so "always no alert" already scores about 0.986. There is no baseline.
+  - The Kharkivska figures are duplicated from Kyivska, so its AUC cannot be trusted. I read the metrics off the PDF figures.
+- **Tomenko, NaUKMA coursework (2024).** RNN/LSTM/GRU on nationwide daily count and mean duration (778 days, 2 lags, 70/30 split). Test MAPE is about 35% for count and 30% for duration, unstable across retraining, with no baseline.
+- **Adjacent peer-reviewed work, not forecasting:**
+  - Sidchenko et al. 2024 (*Системи обробки інформації*) propose a method for marking danger zones inside an alert area.
+  - Bystrytska 2026 (*Digital War*) analyses 25 Telegram monitoring channels (893,472 posts). The official Air Force channel issues only 2.51% of first-move alerts, so Telegram text leads the sirens.
+- I found no CEUR-WS, IEEE, Springer or Ukrainian-journal forecasting paper, and no academic model of missile or Shahed launch counts.
+
+**2. Documented regularities are sparse and mostly single numbers.**
+- PNAS 2022 sample: median alert 59.78 min, 99th percentile 279.53 min, minimum 30 min. The 30-minute floor may be an imputation artefact.
+- Weekday school-hour alerts, Sep 2024 – Feb 2025: median 33 min (VoxUkraine/KSE).
+- Neighbouring oblasts are strongly correlated, and base rates differ by more than an order of magnitude east to west.
+- Save the Children (NGO, verified): about 50% of alerts fall at night; Q3 2026 is the record quarter; Kyiv's daytime share rose from 38% in July to over 60% in Aug–Sep 2026.
+- Structural breaks in the alert system itself: reliable logging only from mid-March 2022, raion-level alerts from 2025, and yellow/red tiers from September 2026 (this last one from news summaries only).
+- Nothing published covers heavy tails, burstiness, self-excitation, propagation lags or seasonality.
+
+**3. Alerts as a variable in other fields.**
+- **Mobility:** Van Dijcke, Wright & Polyak (PNAS 2023) ran 3,256 device-by-minute event studies. Alert fatigue is tied to 21-day rolling alert duration; 35–45% of casualties were avoided, and 8–15% were avoidable.
+- **Mental health and sleep:** Stieger 2023 uses self-reported alarms. Kurapov 2024 builds a 10-week regional index, which predicts PTSS but not sleep.
+- **Education:** Mykhailyshyna 2025 (SSRN, abstract only) finds the night-before alert matters while total alerts do not. Ternovenko 2026 (KSE thesis) and Savisko & Karakai 2025 (lost-lessons formula) also use alert data.
+- **Labour:** Anastasia, Boeri & Zholud 2026 classify oblasts into exposure terciles by alarm duration; matching efficiency falls about 15% overall and 18–24% in the east and south.
+- Across these, timing-specific exposure measures find effects and cumulative counts often do not. Almost all exposure is assigned at oblast level.
+
+**4. Israel.** I found no forecasting or Hawkes model of rocket alerts. What transfers is study design:
+- siren-level heart-rate windows on wearables (Mofaz 2023: median +15.4 bpm, 02:00–06:00 sirens only);
+- timing-based difference-in-differences on scraped Home Front Command alerts (Bines et al.: 20,159 alerts, +2.6 pp Likud);
+- VAR of rocket fire against killings (Haushofer 2010, from secondary summaries only).
+
+**5. Conflict forecasting.**
+- **ViEWS 2023/24 (JPR 2025):** scored by CRPS, log score and interval score on a true-future window. The all-zeros and recent-history "conflictology" benchmarks are hard to beat, and models fail on onsets.
+- **ACLED CAST:** LightGBM with a Tweedie objective, neighbour features, hierarchical reconciliation and conformal intervals. Its own monthly reports show misses ranging from about 3% to 24% under escalation.
+- **Hawkes on conflict:** Lewis 2012 (Iraq), Zammit-Mangion 2012 (Afghanistan), Jun & Cook, Browning et al. None has been applied to the Russia–Ukraine war.
+- **Ukraine-specific work is monitoring, not forecasting:** VIINA, the Economist war-fire model, VIIRS Nightfire, and the NORSAR seismic catalogue.
+
+**6. Not yet done (my inference from the searches).** Onset forecasting against persistence and climatology baselines; probabilistic scoring and calibration; horizons between 15 minutes and 24 hours; raion level; duration or survival models; point-process or spatio-temporal models; regime-aware evaluation; evaluated use of Telegram or launch data; alert-versus-strike false-alarm rates after 2022; a provenance audit of the Telegram-scraped datasets.
+
+## Caveats
+- **Blocked sources (HTTP 403 or bot challenge):** SSRN 5336845, the CEPR VoxEU column, MDPI pages, and the MIT DSpace record. Items from these are tagged [ABS] or [SNIP].
+- **Not located:** the journal article behind the 1,344-night sleep study (press coverage only) and the scored true-future results of the ViEWS 2023/24 challenge.
+- **Coverage limits:** Ukrainian repository theses are poorly indexed, so finding none is not proof none exist. Hebrew sources were not searched.
+- **GitHub and Kaggle:** not catalogued, per instructions. The Gaps sections carry a few unverified data caveats that surfaced in search summaries (a stopped feed in Sept 2026, a possible end to Air Force launch-count reporting from 10 Aug 2026) for the dataset reviewers to check.
+- **Tool calls:** I went well past the suggested 15 because of the breadth of the brief.
+
+====================================================================================================
+ASSISTANT  [2026-10-12 17:43:45 UTC]
+====================================================================================================
+The academic-literature track is in; two of four remain (open-source projects and methodology).
+
+The main takeaway from the literature is that **direct forecasting work is almost nonexistent**, which leaves a lot of room for your project:
+
+- **Only two works forecast Ukrainian alerts, neither peer-reviewed.** One is an arXiv preprint (Pavlyshenko & Pavlyshenko, 2024) using a Random Forest per oblast at 5–15 minute horizons; the other is a NaUKMA coursework using RNNs on nationwide daily counts.
+- **The preprint's scores look inflated.** Its target is effectively "alert still active at t+H" and its top feature is the current alert's duration, so it mostly predicts continuation. With positives at 1.4% of test minutes in Lviv oblast, "always no alert" already scores about 0.986 accuracy, and no baseline is reported.
+- **Telegram text leads the sirens.** A 2026 study of 25 monitoring channels found the official Air Force channel issues only 2.51% of first-move alerts, which matters if you want an agent that reads those channels.
+- **Conflict-forecasting results are a warning.** In the ViEWS competitions, the "all zeros" and "recent history" baselines were hard to beat and models failed on onsets.
+- **Apparently not yet done:** onset forecasting against persistence and climatology baselines, calibrated probabilistic forecasts, horizons between 15 minutes and 24 hours, raion-level work, duration/survival models, and point-process or spatio-temporal models.
+
+Full notes are in `research_notes/Ukraine air raid alert forecasting/academic_literature.md`.
+
+====================================================================================================
+NOTICE  [2026-10-12 17:43:46 UTC]
+====================================================================================================
+Background task: Agent "Academic literature on alerts" finished
+
+====================================================================================================
+SUBAGENT REPORT  [2026-10-12 17:44:17 UTC]
+====================================================================================================
+The methods guide is written and saved to `C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\modelling_and_evaluation_methods.md`. It covers all nine key questions in the Takeaway / Cited Findings / Inferences / Gaps structure, with a fit verdict for every method family.
+
+**Sourcing caveats the report writer should know**
+- **Verified this session:** library versions and release dates (PyPI, CRAN and GitHub APIs, queried 2026-10-12) and the 2024-2026 benchmark papers (Chronos-2, fev-bench, GIFT-Eval, EasyTPP, EarthquakeNPP, HoTPP, Context is Key, ForecastBench updates, the LLM-evaluation pitfalls paper, VIEWS 2023/24, the leakage survey).
+- **Cited from memory, links not re-opened:** most classical references (textbooks and pre-2024 papers). Each section's Gaps says which.
+- **Search-snippet only:** four 2026 preprints (arXiv 2609.25788, 2510.00742, 2602.10848, 2608.20980) are marked provisional in the file.
+- **Not verified:** the M5 headline percentages (publisher page returned 403), so M5 is reported qualitatively only.
+- **Tool calls:** I used about 40 against the guideline of 15, because of the breadth and the library-status checks.
+
+**Main conclusions**
+- **Workhorse model:** a global gradient-boosted tree model on lag, calendar, spell-length and neighbour-state features is the best-supported primary model. This rests on M5 and the forecasting-with-trees literature, plus my inference that 25 regions is too small a panel for high-capacity deep models.
+- **Deep and graph models:** there is no evidence they win at this scale. Linear and MLP baselines have repeatedly matched Transformers and spatio-temporal GNNs on much larger benchmarks.
+- **Foundation models:** Chronos-2, TiRex and TimesFM-2.5 clearly beat classical statistical baselines zero-shot. On fev-bench, Chronos-2 has a 90.7% win rate and 47.3% skill score against 20.2% skill for a statistical ensemble. Those benchmarks contain little zero-inflated or binary data, so treat these models as challengers on daily aggregates, not presumed winners.
+- **Statistical core:** negative-binomial autoregression with neighbour terms for daily counts, and a dynamic logistic / discrete-time hazard model for the on/off state. The hazard formulation unifies the Markov, survival and classifier views in one feature table.
+- **Point processes:** a multivariate Hawkes model over region marks with a seasonal background is the natural advanced interpretable model for onsets. It needs explicit handling of three mismatches: no onsets while an alert is active, simultaneous country-wide onsets, and inflated self-excitation if the background is held constant.
+- **Neural point processes:** not supported. EasyTPP finds no single winner and poor event-time prediction across models; EarthquakeNPP finds none of five neural models beat ETAS.
+- **Text and LLMs:** context can help substantially (Context is Key: best LLM 0.159 vs Chronos 0.326), but with occasional catastrophic failures. ForecastBench reported top systems statistically indistinguishable from superforecasters in July 2026, a claim that is contested. Temporal leakage is the dominant failure mode, so historical LLM backtests on pre-cutoff periods are invalid. My recommendation is to use LLMs as feature extractors first.
+- **Evaluation:** the key design choice is a target persistence cannot solve: onset within a horizon given no current alert, termination, or state at a lead longer than typical durations.
+  - **Protocol:** rolling-origin backtests over multiple disjoint periods with purge and embargo.
+  - **Baselines:** persistence, same hour last week, and a trailing hour-of-week climatology per region.
+  - **Metrics:** proper scores, with Brier skill computed within region and time-of-day strata, and everything reported per lead time.
+  - **Evidence:** in the VIEWS conflict challenge, trailing-window empirical baselines were hard to beat, and most models lost to a no-change baseline when predicting changes.
+- **Predictability limits:** this is my inference, not a measured result. Persistence, short-lead propagation and base rates are predictable; the timing of new attacks and tactic shifts is not, from alert history alone. Adaptation methods (windowed or decayed retraining, drift detectors, adaptive conformal) only react after a change is observed.
+
+**Library status worth flagging**
+- **Stale or dormant:**
+  - `tscount`: last release 2020.
+  - `pycox`: no release or push since September 2024.
+  - `neuralprophet`: last release June 2024.
+  - `lag-llama`: last push June 2025.
+  - `hmmlearn`: last release October 2024.
+  - `tsintermittent`: last release 2022.
+  - `pyhawkes` and `hawkeslib`: abandoned.
+- **Active:** the Nixtla stack, Darts, sktime, GluonTS, AutoGluon-TimeSeries, `chronos-forecasting`, `timesfm`, `ruptures`, `scikit-survival`, `river`, `mapie`, and R `surveillance`.
+- **`tick`:** has a 2026 release (0.8.0.2, May 2026).
+- **`lifelines`:** last release and push were March 2026.
+
+**Gaps**
+- No benchmark evaluates foundation models, Hawkes models or survival models on alert-like binary interval data; the fit verdicts are inferences from model assumptions.
+- No source addresses reconciliation for hierarchies where the binary state aggregates by OR rather than by sum.
+- No quantitative estimate of the predictability ceiling for an adversary-driven alert process was found.
+- No study was found measuring the value of text signals for minute-to-hour alert forecasting in an analogous domain; that search was not exhaustive.
+
+====================================================================================================
+ASSISTANT  [2026-10-12 17:44:25 UTC]
+====================================================================================================
+The methodology track is in; only the open-source projects catalogue is still running. Once it lands, the report gets written.
+
+What the methods review recommends:
+
+- **Pick a target persistence can't solve.** Predicting "is an alert active at t+H" is mostly won by "same as now". Better targets are alert onset within a horizon given no current alert, alert termination, or state at a lead longer than typical durations.
+- **Workhorse model:** one global gradient-boosted tree model across all regions, on lag, calendar, spell-length and neighbour-state features. With about 25 regions, there is no evidence that deep or graph models win.
+- **Statistical core:** negative-binomial autoregression with neighbour terms for daily counts, and a discrete-time hazard (dynamic logistic) model for the on/off state.
+- **Advanced interpretable option:** a multivariate Hawkes model over regions with a seasonal background, with care for simultaneous nationwide onsets and for the fact that no onset can occur while an alert is active. Neural point processes are not supported by the benchmarks.
+- **Foundation models (Chronos-2, TimesFM-2.5, TiRex):** worth running as challengers on daily aggregates, but their benchmarks contain little binary or zero-inflated data.
+- **LLMs and text:** context can help a lot but fails catastrophically at times, and backtests on periods before the model's training cutoff are invalid because of leakage. The recommendation is to use LLMs as feature extractors first.
+- **Evaluation:** rolling-origin backtests with purge and embargo; baselines of persistence, same hour last week, and trailing hour-of-week climatology per region; proper scores (Brier skill within region and time-of-day strata) reported per lead time.
+
+Several libraries you might reach for are stale (`tscount`, `pycox`, `neuralprophet`, `hmmlearn`, `lag-llama`); the Nixtla stack, Darts, sktime, AutoGluon-TimeSeries, `ruptures`, `scikit-survival` and `river` are active.
+
+Full notes are in `research_notes/Ukraine air raid alert forecasting/modelling_and_evaluation_methods.md`.
+
+====================================================================================================
+NOTICE  [2026-10-12 17:44:25 UTC]
+====================================================================================================
+Background task: Agent "Modelling and evaluation methodology" finished
+
+====================================================================================================
+NOTICE  [2026-10-12 17:51:16 UTC]
+====================================================================================================
+Background task: Agent "Open-source alert analysis projects" was stopped by user
+
+====================================================================================================
+TOOL CALL: Bash  [2026-10-12 17:51:27 UTC]
+====================================================================================================
+List saved research notes and their word counts
+$ ls -la "/c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes/Ukraine air raid alert forecasting" && wc -w "/c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes/Ukraine air raid alert forecasting"/*.md
+
+====================================================================================================
+TOOL RESULT: Bash  [2026-10-12 17:51:28 UTC]
+====================================================================================================
+total 316
+drwxr-xr-x 1 mykha 197609      0 Oct 12 20:51 .
+drwxr-xr-x 1 mykha 197609      0 Oct 12 20:23 ..
+-rw-r--r-- 1 mykha 197609  78183 Oct 12 20:43 academic_literature.md
+-rw-r--r-- 1 mykha 197609  58168 Oct 12 20:41 data_sources_and_apis.md
+-rw-r--r-- 1 mykha 197609 101690 Oct 12 20:43 modelling_and_evaluation_methods.md
+-rw-r--r-- 1 mykha 197609  71493 Oct 12 20:51 open_source_projects.md
+ 10358 /c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes/Ukraine air raid alert forecasting/academic_literature.md
+  6466 /c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes/Ukraine air raid alert forecasting/data_sources_and_apis.md
+ 12173 /c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes/Ukraine air raid alert forecasting/modelling_and_evaluation_methods.md
+  8426 /c/Users/mykha/VSCodeProjects/air-alert-pred-agent/research_notes/Ukraine air raid alert forecasting/open_source_projects.md
+ 37423 total
+
+====================================================================================================
+ASSISTANT  [2026-10-12 17:51:31 UTC]
+====================================================================================================
+The open-source projects track was stopped and then resumed, so it's running again; its notes file already exists (about 8,400 words) and may still be updated. I'm holding the report until that track reports back, so the synthesis works from its final notes rather than a draft that could change underneath it.
+
+The other three tracks are complete and saved in `research_notes/Ukraine air raid alert forecasting/`.
+
+====================================================================================================
+SUBAGENT REPORT  [2026-10-12 17:51:51 UTC]
+====================================================================================================
+The catalogue is written to `C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\open_source_projects.md`, structured by the six key questions (Takeaway / Cited Findings / Inferences / Gaps each).
+
+**How far to trust it.** Each finding is tagged by how it was checked:
+- **[code]**: I downloaded the notebook or script and read the target, split, feature and metric lines. This covers about 12 repositories.
+- **[README]**: author-reported, not checked against code. This covers most of the KSE projects and several course projects.
+- **[snippet]**: taken from a search-result summary; the page itself was not opened. This covers several media and Telegram-bot items.
+
+I went well past the ~15-call guideline (roughly 45 calls) because the task asked for code-level inspection.
+
+## Main findings
+
+**1. Two large student families dominate GitHub.**
+- **NaUKMA course family, 2023–2026.** About 20 team repositories build a "Python SaaS" predicting hourly alarms per region 12–24 hours ahead from ISW text, weather and alarm history. The NaUKMA link rests on repository names and one README; I did not confirm the lecturer or syllabus.
+- **KSE Agentic AI School "Stage 2" family.** Dozens of repositories from June 2026 and again from 10–12 October 2026, all titled roughly "Time Series Analysis of air raid alerts in Ukraine". Nearly all use the Vadimkin siren dataset.
+- The user's own repo `mykhailoisupov/air-raid-alert-forecast` (created 2026-10-12) surfaced in the search. It looks like the same assignment; I left it out of the catalogue.
+
+**2. Course family: what the code shows.**
+- **2023–2024 projects** use random or shuffled splits and report accuracy only:
+  - Anivone reports 97.9%, computed on the full dataset including training rows.
+  - texasiaa reports 0.92; in the same repo, accuracy falls from 0.82 to 0.65–0.89 across folds once the split is chronological.
+- **2025–2026 projects** use `TimeSeriesSplit` and add Telegram features, AWS deployment and gated retraining:
+  - Hlieb, with short lags removed: F1 0.68.
+  - tramaxill, live daily log over 13 days: F1 0.34–0.65.
+  - AEGIS: F1 about 0.85 and ROC-AUC about 0.95, but on a table where the 1-hour alarm lag is observed, while the served 24-hour forecast runs recursively on its own predictions. That number is next-hour skill, not 24-hour skill (my inference from the code).
+- No course project compares against persistence or climatology, and none ablates ISW or weather features.
+
+**3. KSE family: the leakage-controlled results are modest.** For alert onsets, skill over hour-of-day climatology is small and fades with horizon:
+
+| Project | Target | Result |
+|---|---|---|
+| IvanSnezhok | new alert within 1–6 h | +2% to +5% Brier skill |
+| vladysalvkrutii | new alert within 3 h | +7.7% Brier skill, within-region AUC 0.588 |
+| sinarhen | alert starts within 1–6 h | +10% to +15%, fading to +2% at 24 h |
+| lyaroshenko | onset next hour | ROC-AUC 0.68 Kyiv City, about 0.53–0.56 elsewhere |
+
+Higher figures elsewhere (ROC-AUC 0.86–0.92) come from "any alert active" targets, pooled regions or very short horizons. Logistic regression matched or beat LightGBM in several of these.
+
+**4. Telegram text has not been shown to help.**
+- IvanSnezhok's ablation over about 131,000 posts: change in Brier not significant.
+- lbgos: no gain from radar channels or 20+ other sources.
+- sinarhen: in 24 of 24 red-alert waves, no channel post preceded the first red start; median lag 1 minute.
+
+**5. LLM and agent use.** LLMs appear in three roles:
+- **Extraction of typed events from Telegram:** chud00s uses Claude Haiku 4.5 with forced tool use; lbgos uses an LLM once to label 3,000 posts and then a small classifier at run time; ALERTua, abyrwalg and AirThreatAI filter or tag messages with Ollama or OpenAI.
+- **Narrative briefings over computed numbers:** ArseniiKlimenko's daily GitHub Actions job; the Terrestrial hackathon entry, which rejects summaries citing non-existent facts.
+- **Building the project with coding agents:** several KSE submissions include the Claude Code transcript.
+
+I found no project where an LLM agent itself produces a scored probability forecast.
+
+**6. Kaggle, media and products.**
+- **Kaggle:** six relevant datasets but almost no notebook work; the one documented notebook is DimaKyn's, explained in a DOU.ua article.
+- **Media:** Texty, Ekonomichna Pravda, Slovo i Dilo and Fakty frame alerts as lost time (hours under alert, share of working day, fragmentation of the day), mostly citing air-alarms.in.ua.
+- **Products:** a few student forecasts are deployed (a Vercel map, a Streamlit app, Telegram bots), but none has a published accuracy record. Monitoring channels' attack predictions have never been evaluated publicly.
+
+**7. Recurring mistakes, each with a concrete example in the file:** random splits, metrics on training data, persistent targets, short lags unavailable at the advertised horizon, pooled metrics, a persistence-baseline off-by-one, MAPE on sparse counts, and data-definition breaks (the 2025 move to raion-level alerts, 38–42% duplicate rows in the official file, imputed end times).
+
+## Gaps the writer should know about
+- Kaggle notebook listings need a login, so notebooks attached to the datasets were not read.
+- No Reuters, Bloomberg or Kyiv Independent graphics piece was found.
+- The alerts.in.ua and air-alarms.in.ua statistics pages were not opened, so their counting rules are undocumented here.
+- Most of the roughly 90 KSE repositories were not opened; the catalogue is a sample chosen for informative READMEs.
+- No two projects share a test window, target and data file, so the performance figures are not comparable with each other.
+
+====================================================================================================
+ASSISTANT  [2026-10-12 17:51:53 UTC]
+====================================================================================================
+All four research tracks are complete. Starting the report synthesis now.
+
+====================================================================================================
+TOOL CALL: Agent  [2026-10-12 17:51:57 UTC]
+====================================================================================================
+Write final report (general-purpose)
+Read the notes in C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\research_notes\Ukraine air raid alert forecasting\ and synthesize into a research report that answers: I want to create a time series analysis of air raid alerts in Ukraine. What existing approaches and solutions are there to learn from — the available data sources and APIs, open-source and practitioner projects, academic literature, and the modelling and evaluation methods that suit this kind of data — and what should I take from them when designing my own project?
+
+Earlier research in this conversation to build on: none
+
+Save your final report to this exact path: C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\reports\Ukraine air raid alert forecasting.md
+
+**As a first step, you must read C:\Users\mykha\.claude\skills\synced\f2276226-fc91-42ce-a224-04959a1a3377_1a6f0374-c534-418d-86d2-0d5042f7cad4\deep-research\references\report-writer.md for instructions on how to write your research report.**
+
+====================================================================================================
+TOOL RESULT: Agent  [2026-10-12 17:51:58 UTC]
+====================================================================================================
+[started in the background]
+
+====================================================================================================
+ASSISTANT  [2026-10-12 17:52:04 UTC]
+====================================================================================================
+The report is being written now from all four sets of notes. While that runs, here is what the open-source projects track found, since it is the most directly relevant to "solutions to learn from":
+
+- **Two student project families dominate GitHub.** One is a NaUKMA course family (about 20 repos, 2023–2026) predicting hourly alarms per region 12–24 hours ahead from ISW text, weather and alarm history. The other is a KSE Agentic AI School family with dozens of repos titled roughly "Time Series Analysis of air raid alerts in Ukraine", nearly all built on the Vadimkin dataset.
+- **Headline accuracies mostly don't survive inspection.** Early projects used random splits; one reports 97.9% computed on data that includes the training rows, and another drops from 0.92 to 0.65–0.89 once the split is chronological.
+- **Leakage-controlled results are modest.** For predicting a new alert onset within 1–6 hours, the careful projects get roughly +2% to +15% Brier skill over hour-of-day climatology, fading to about +2% at 24 hours. Logistic regression matched or beat LightGBM in several.
+- **Telegram text has not been shown to help.** One ablation over about 131,000 posts found no significant change, and another found that in 24 of 24 red-alert waves no channel post preceded the first alert start.
+- **No project has an LLM agent producing a scored probability forecast.** LLMs are used to extract typed events from Telegram, to write narrative briefings over computed numbers, or to build the project itself.
+- **No course project compares against persistence or climatology baselines**, and none ablates the ISW or weather features.
+
+One caveat on comparability: no two projects share a test window, target and data file, so these figures can't be ranked against each other.
+
+I'll summarize the full report and give you its path as soon as it's finished.
+
+====================================================================================================
+SUBAGENT REPORT  [2026-10-12 18:02:11 UTC]
+====================================================================================================
+The report is written and saved to `C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\reports\Ukraine air raid alert forecasting.md`. It synthesises all four research notes; there was no earlier research to build on.
+
+**Title:** "Honest baselines deflate Ukraine's alert forecasts" — about 5,100 words, five signpost sections plus a conclusion, two tables (data sources; reported forecast skill), inline citations throughout.
+
+**Main findings the report leads with**
+
+- **Data:** Almost everything rests on the Vadimkin siren dataset. Its official file froze on 7 September 2026 when the source Telegram channel went silent, and it stores every event before 25 January 2026 twice (299,275 rows, 185,430 unique).
+- **Structural breaks:** Three changes break any naive long series: the 2025 move from oblast to raion-level alerts, the yellow/red levels of September 2026, and the end of the official feed.
+- **Live sources:** alerts.in.ua is the best live feed, but its history window is one month per region, so archiving should start immediately. Kyiv city open data is clean and current.
+- **Practitioner projects:** Two large student families exist (a NaUKMA course family, and dozens of KSE Agentic AI School Stage 2 repositories). Headline accuracies of 80–98% come from random splits, persistence-solvable targets and pooled regions.
+- **Honest ceiling:** Leakage-controlled projects report onset forecasts beating hour-of-day climatology by roughly 2–15% Brier skill at 1–6 hours, and nothing measurable at 24 hours. Logistic regression matches or beats LightGBM. Telegram text and cross-region features added nothing at hourly horizons.
+- **Literature:** Only one arXiv preprint and one student coursework forecast alerts, neither with a naive baseline. About ten studies use alerts as an exposure variable. No formal statistical description of the alert process exists.
+- **Methods:** A discrete-time hazard model on a region-by-time panel is the best fit, evaluated by walk-forward splits with an embargo, proper scoring rules and climatology stratified by region. Deep, graph and neural point-process models are not supported at this scale.
+- **Design recommendations:** Treat the harmonised dataset as the first deliverable, measure time under alert by interval union, predict onsets and endings separately, fix the evaluation contract before modelling, and keep the LLM to extraction, explanation and orchestration unless it is scored prospectively.
+
+**Caveats flagged in the report**
+
+- KSE project metrics are self-reported in READMEs and were not re-run; no two projects share a test window and target, so they bound a ceiling without forming a benchmark.
+- The data-quality figures were computed by the researchers from the files on 12 October 2026.
+- Classical method references were cited from the researchers' working knowledge, not all re-opened.
+- The "one month of history" consequence (a pull today reaches back only to about 12 September) is my inference from the documented API window; the client was not tested against a live token.
+- Unknowns stated: why the official channel stopped, whether text helps at horizons under 30 minutes, and how far a ceiling measured on roughly four-week test windows generalises.
+
+Claims the notes marked as search-snippet-only were mostly left out. The result is long because the question spans four areas plus design guidance.
+
+====================================================================================================
+TOOL CALL: Read  [2026-10-12 18:02:14 UTC]
+====================================================================================================
+C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\reports\Ukraine air raid alert forecasting.md
+
+====================================================================================================
+TOOL RESULT: Read  [2026-10-12 18:02:14 UTC]
+====================================================================================================
+1	# Honest baselines deflate Ukraine's alert forecasts
+2	
+3	There is plenty of prior work to learn from, and its main lesson is that data definition and evaluation design decide the result far more than the choice of model. Almost every project and paper rests on one Telegram-scraped archive, the Vadimkin siren dataset, whose official file stopped on **7 September 2026**, stores every event before 25 January 2026 twice, and spans three changes in how alerts are issued: the 2025 move from oblast-wide to raion-level alerts, the yellow and red levels of September 2026, and the end of the official Telegram feed. Dozens of open-source forecasters exist, mostly student work from NaUKMA and KSE; the 80–98% accuracies of the earlier ones come from random train/test splits, and later high scores come from targets that an already-running alert answers by itself and from pooling busy and quiet regions. The few projects with chronological evaluation and leakage tests agree on a modest ceiling: forecasts that a new alert will start beat a simple hour-of-day historical rate by roughly **2–15% in Brier score (the squared error of a probability forecast) at 1–6 hours, and by nothing measurable at 24 hours**. The published literature is thinner still, one arXiv preprint and one student coursework, neither with a naive baseline, and nobody has formally described the statistics of the alert process. For your own project this points to a specific design: a harmonised "time under alert" dataset with a live feed you archive yourself, separate targets for alert onset and alert ending, a logistic hazard model as the first real model, and every score reported as skill over per-region historical rates under walk-forward splits. The open ground is rigorous description (durations, burstiness, propagation lags, regime changes) and anything covering the weeks since the September 2026 reform.
+4	
+5	## One Telegram-scraped archive feeds the whole field, and it froze on 7 September 2026
+6	
+7	The backbone of nearly all existing work is the Vadimkin siren dataset on GitHub: MIT-licensed, rebuilt by a daily job, all times in UTC ([repository](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset), [README](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset/blob/main/datasets/README.md)). It has two branches. The "official" file is parsed from the Telegram channel of the Повітряна тривога app and records events at oblast, raion (district) and hromada (community) level from 15 March 2022. The "volunteer" file is parsed from the eTryvoga channel, starts on 25 February 2022 and is oblast-level only ([README](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset/blob/main/datasets/README.md)). The official file needs repair before any analysis. A script run over it on 12 October 2026 found **299,275 rows but only 185,430 unique events**: every event that started before 25 January 2026 appears exactly twice, and the rows are not in time order ([official_data_en.csv](https://raw.githubusercontent.com/Vadimkin/ukrainian-air-raid-sirens-dataset/main/datasets/official_data_en.csv)). Its last event starts at 05:28 UTC on 7 September 2026, because the source channel has posted nothing since 06:09 UTC that day ([t.me/s/air_alert_ua](https://t.me/s/air_alert_ua)). Two open issues report the stall, and no announcement explains it ([issue #7](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset/issues/7)).
+8	
+9	Subtler defects distort durations. When an alert never receives an all-clear and a new one for the same place arrives more than three hours later, the processor closes the old alert at start plus one hour without flagging it ([official_channel_processor.py](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset/blob/main/processors/official_channel_processor.py)), and 255 events last exactly 3,600 seconds ([official_data_en.csv](https://raw.githubusercontent.com/Vadimkin/ukrainian-air-raid-sirens-dataset/main/datasets/official_da
+[... shortened: 37,537 more characters, about 106 more lines]
+
+====================================================================================================
+ASSISTANT  [2026-10-12 18:02:23 UTC]
+====================================================================================================
+The report is at `C:\Users\mykha\VSCodeProjects\air-alert-pred-agent\reports\Ukraine air raid alert forecasting.md` (about 5,100 words, with source links throughout); the four sets of underlying notes are in `research_notes\Ukraine air raid alert forecasting\`.
+
+The main lesson from existing work is that data definition and evaluation design decide the result far more than the model. Nearly everything is built on the Vadimkin siren dataset, whose official file froze on 7 September 2026, stores most events twice, and spans three changes in how alerts are issued (the 2025 move to raion-level alerts, the yellow/red levels of September 2026, and the end of the official feed). Dozens of open-source forecasters exist, mostly NaUKMA and KSE student projects, and their 80–98% accuracies come from random splits or from targets that an already-running alert answers by itself. The few leakage-controlled projects agree that predicting a new alert onset beats an hour-of-day historical rate by only about 2–15% in Brier score at 1–6 hours and by nothing measurable at 24 hours; those figures are self-reported in READMEs and were not re-run. The report recommends a de-duplicated "time under alert" dataset, separate onset and ending targets, a logistic hazard model as the first real model, and every score reported as skill over per-region climatology under walk-forward splits.
+
+One thing is time-sensitive: alerts.in.ua is the best live source, but its documented history window is one month per region, so each day you wait to start archiving loses a day of post-freeze data. That window is taken from the API docs and was not tested with a live token.

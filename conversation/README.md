@@ -1,22 +1,25 @@
 # Conversation logs
 
-Plain-text exports of the AI conversations used to build this project. The author adds them by hand;
-nothing in this folder is generated or reconstructed.
-
-## What the logs cover
-
-1. Research into existing work on Ukrainian air raid alert data and forecasting.
-2. The plan for a four-hour project, and the first build up to the `v0` tag.
-3. The final model, its evaluation, and the text experiment.
-4. The follow-up after review: the boosted-trees correction, the live forecast, the remaining-time
-   estimate, the status page, and the shorter README.
-
-## Files
-
-Add one line per exported file, in the order the sessions happened, as `NN-short-name.txt`.
+The AI conversation used to build this project, as plain text, in four parts.
 
 | File | Covers |
 |---|---|
-| | |
+| [01-research.txt](01-research.txt) | Research into existing work on Ukrainian alert data and forecasting |
+| [02-plan-and-build.txt](02-plan-and-build.txt) | The plan, the build up to the final model, the text experiment, two questions |
+| [03-review-follow-up.txt](03-review-follow-up.txt) | Boosted-trees correction, live forecast, remaining time, status page |
+| [04-presentation-and-log.txt](04-presentation-and-log.txt) | The README as a presentation, and adding these logs |
 
-In Claude Code, `/export <file>` writes the current conversation to a text file.
+## How the logs were made
+
+They are a mechanical export of the Claude Code session transcript stored on disk, not a retelling.
+
+- **Verbatim:** user messages, assistant replies and subagent reports.
+- **Shortened:** tool inputs, and tool output after 40 lines.
+- **Left out:** images, the assistant's private reasoning, harness system messages, internal identifiers
+  and the account email.
+
+Two limits:
+
+- The stored transcript does not hold every short progress note the assistant wrote between tool calls,
+  so those notes are absent here.
+- The last part ends at the moment of export, inside the request to add the logs.
