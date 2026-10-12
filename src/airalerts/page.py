@@ -495,4 +495,4 @@ weekly on the previous {FINAL.train_weeks} weeks; every forecast uses only what 
 
 
 def write(path: Path, events: pd.DataFrame, as_of: pd.Timestamp, live: dict, report: dict, predictions: dict) -> None:
-    path.write_text(render(events, as_of, live, report, predictions), encoding="utf-8", newline="\n")
+    path.write_text(render(events, as_of, live, report, predictions), encoding="utf-8")
