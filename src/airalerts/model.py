@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -32,6 +34,7 @@ class ModelSpec:
     name: str
     train_weeks: int | None  # None = every earlier origin
     reference_logits: tuple[str, ...] = ()  # reference forecasts fed in as extra features
+    estimator: str = "logistic"  # or "boosting"
 
 
 def logit(p: np.ndarray) -> np.ndarray:
@@ -50,5 +53,14 @@ def feature_names(spec: ModelSpec) -> list[str]:
     return [f"log1p({n})" for n in LOG_FEATURES] + list(RAW_FEATURES) + [f"logit({n})" for n in spec.reference_logits]
 
 
-def new_estimator() -> Pipeline:
+def new_estimator(spec: ModelSpec) -> Pipeline | CalibratedClassifierCV:
+    if spec.estimator == "boosting":
+        trees = HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, random_state=0)
+        # Contiguous folds, so calibration never mixes neighbouring hours across train and holdout.
+        return CalibratedClassifierCV(trees, method="sigmoid", cv=3)
     return make_pipeline(StandardScaler(), LogisticRegression(C=1.0, max_iter=2000))
+
+
+def coefficients(model: Pipeline, spec: ModelSpec) -> pd.Series:
+    """Standardised coefficients of a fitted logistic model."""
+    return pd.Series(model[-1].coef_[0], index=feature_names(spec)).round(3)

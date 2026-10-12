@@ -10,6 +10,8 @@ from airalerts.baselines import REFERENCE, reference_forecasts
 from airalerts.data import KYIV_TZ, REFORM
 from airalerts.model import ModelSpec, design, new_estimator
 
+REFERENCES = ("const_28d", "hour_28d", "hour_all", "markov_28d")
+
 WEEK = pd.Timedelta(days=7)
 TEST_WEEKS = 8
 BOOTSTRAP_SAMPLES = 1000
@@ -37,21 +39,25 @@ def split(frame: pd.DataFrame, fold_start: pd.Timestamp, horizon_h: int, train_w
     return frame[train], frame[test]
 
 
-def backtest(grid: pd.DataFrame, horizon_h: int, specs: list[ModelSpec], start: pd.Timestamp, end: pd.Timestamp) -> tuple[pd.DataFrame, list[dict]]:
-    """Out-of-sample probabilities for one horizon on quiet origins in [start, end)."""
+def backtest(grid: pd.DataFrame, horizon_h: int, specs: list[ModelSpec], start: pd.Timestamp, end: pd.Timestamp) -> tuple[pd.DataFrame, list[dict], dict]:
+    """Out-of-sample probabilities for one horizon on quiet origins in [start, end).
+
+    Also returns per-fold bookkeeping and the models fitted for the final fold.
+    """
     target = f"onset_{horizon_h}h"
     frame = grid[~grid["active"] & grid[target].notna()]
     frame = frame.join(reference_forecasts(frame, horizon_h))
-    parts, folds = [], []
+    parts, folds, fitted = [], [], {}
     for fold_start in fold_starts(start, end):
         fold = {"fold_start_utc": fold_start.isoformat()}
         test_part = None
         for spec in specs:
             train, test = split(frame, fold_start, horizon_h, spec.train_weeks)
             test = test[test.index < end]
-            model = new_estimator().fit(design(train, spec), train[target].to_numpy())
+            model = new_estimator(spec).fit(design(train, spec), train[target].to_numpy())
+            fitted[spec.name] = model
             if test_part is None:
-                test_part = test[[target, "local_hour", *reference_forecasts_columns(frame)]].rename(columns={target: "y"})
+                test_part = test[[target, "local_hour", *REFERENCES]].rename(columns={target: "y"})
             test_part[spec.name] = model.predict_proba(design(test, spec))[:, 1]
             fold[spec.name] = {
                 "train_rows": int(len(train)),
@@ -60,11 +66,7 @@ def backtest(grid: pd.DataFrame, horizon_h: int, specs: list[ModelSpec], start: 
         fold["test_rows"] = int(len(test_part))
         parts.append(test_part)
         folds.append(fold)
-    return pd.concat(parts), folds
-
-
-def reference_forecasts_columns(frame: pd.DataFrame) -> list[str]:
-    return [c for c in ("const_28d", "hour_28d", "hour_all", "markov_28d") if c in frame.columns]
+    return pd.concat(parts), folds, fitted
 
 
 def brier(y: np.ndarray, p: np.ndarray) -> float:
@@ -85,14 +87,27 @@ def score(predictions: pd.DataFrame, forecasts: list[str]) -> dict:
     y = predictions["y"].to_numpy()
     reference = predictions[REFERENCE].to_numpy()
     days = predictions.index.tz_convert(KYIV_TZ).strftime("%Y-%m-%d").to_numpy()
-    out = {"rows": int(len(y)), "days": int(len(np.unique(days))), "prevalence": round(float(y.mean()), 4), "forecasts": {}}
+    # The strongest simple forecast on this period, picked after the fact: a deliberately hard bar.
+    best_simple = min(REFERENCES, key=lambda name: brier(y, predictions[name].to_numpy()))
+    best = predictions[best_simple].to_numpy()
+    out = {
+        "rows": int(len(y)),
+        "days": int(len(np.unique(days))),
+        "prevalence": round(float(y.mean()), 4),
+        "best_simple_forecast": best_simple,
+        "forecasts": {},
+    }
     for name in forecasts:
         p = predictions[name].to_numpy()
         low, high = skill_interval(y, p, reference, days)
+        best_low, best_high = skill_interval(y, p, best, days)
         out["forecasts"][name] = {
             "brier": round(brier(y, p), 5),
             "brier_skill": round(1 - brier(y, p) / brier(y, reference), 4),
             "brier_skill_ci95": [round(low, 4), round(high, 4)],
+            "skill_vs_best_simple": round(1 - brier(y, p) / brier(y, best), 4),
+            "skill_vs_best_simple_ci95": [round(best_low, 4), round(best_high, 4)],
+            "mean_forecast": round(float(p.mean()), 4),
             "log_loss": round(float(log_loss(y, p, labels=[0, 1])), 5),
             "pr_auc": round(float(average_precision_score(y, p)), 4),
             "roc_auc": round(float(roc_auc_score(y, p)), 4),
@@ -107,19 +122,27 @@ def reliability(predictions: pd.DataFrame, forecast: str, bins: int = 10) -> pd.
     return table.reset_index(drop=True)
 
 
-def evaluate(grid: pd.DataFrame, horizons: tuple[int, ...], specs: list[ModelSpec]) -> tuple[dict, dict[int, pd.DataFrame]]:
+def already_active_share(grid: pd.DataFrame, horizon_h: int, start: pd.Timestamp, end: pd.Timestamp) -> float:
+    """Of the origins with an alert at some point in the next H hours, the share where one was already running."""
+    window = grid[(grid.index >= start) & (grid.index < end)]
+    alert_ahead = window["active"] | (window[f"onset_{horizon_h}h"] == 1)
+    return round(float(window["active"].sum() / alert_ahead.sum()), 4)
+
+
+def evaluate(grid: pd.DataFrame, horizons: tuple[int, ...], specs: list[ModelSpec]) -> tuple[dict, dict[int, pd.DataFrame], dict[int, dict]]:
     start, end = latest_window(grid, horizons)
     report = {"test_start_utc": start.isoformat(), "test_end_utc": end.isoformat(), "reference": REFERENCE, "horizons": {}}
-    predictions = {}
+    predictions, fitted = {}, {}
     for h in horizons:
-        predictions[h], folds = backtest(grid, h, specs, start, end)
-        forecasts = reference_forecasts_columns(predictions[h]) + [spec.name for spec in specs]
+        predictions[h], folds, fitted[h] = backtest(grid, h, specs, start, end)
+        forecasts = list(REFERENCES) + [spec.name for spec in specs]
         report["horizons"][str(h)] = {
             "test_period": score(predictions[h], forecasts),
             "since_reform": score(predictions[h][predictions[h].index >= REFORM], forecasts),
+            "already_active_share": already_active_share(grid, h, start, end),
             "folds": folds,
         }
-    return report, predictions
+    return report, predictions, fitted
 
 
 def summary_table(report: dict, period: str = "test_period") -> pd.DataFrame:
@@ -133,6 +156,9 @@ def summary_table(report: dict, period: str = "test_period") -> pd.DataFrame:
                     "brier": m["brier"],
                     "skill_%": round(100 * m["brier_skill"], 1),
                     "ci95_%": f"{100 * m['brier_skill_ci95'][0]:+.1f} to {100 * m['brier_skill_ci95'][1]:+.1f}",
+                    "vs_best_simple_%": round(100 * m["skill_vs_best_simple"], 1),
+                    "vs_best_ci95_%": f"{100 * m['skill_vs_best_simple_ci95'][0]:+.1f} to {100 * m['skill_vs_best_simple_ci95'][1]:+.1f}",
+                    "mean_p": m["mean_forecast"],
                     "log_loss": m["log_loss"],
                     "pr_auc": m["pr_auc"],
                     "roc_auc": m["roc_auc"],
