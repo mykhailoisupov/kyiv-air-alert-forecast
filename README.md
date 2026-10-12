@@ -1,197 +1,103 @@
-# Kyiv air raid alerts: time series analysis and a leakage-free onset forecast
+# Kyiv air raid alert forecast
 
-This project describes four and a half years of air raid alerts in Kyiv and tests how well the start of the next alert can be forecast from alert history alone. Data runs to 12 October 2026 and the forecast is evaluated on the latest eight weeks, with automated checks that nothing from after the forecast time is used.
+A small Python project that describes Kyiv's air raid alerts since 2022 and forecasts, from alert history
+alone, the chance that a new alert starts within 1, 3 or 6 hours, tested on the latest eight weeks with
+checks that nothing from after the forecast time is used.
 
-## Findings
+![Status page generated for 12 October 2026](docs/page.png)
 
-- **September 2026 was the heaviest month since March 2022.** Kyiv had 190 alert starts and 243 hours under alert in September 2026, against 190 starts and 213 hours in March 2022. Since August 2026 the city has averaged 5.5 alerts a day and spent 24% of the time under alert; in earlier periods it was 1.2 to 1.9 a day and 6% to 8%.
-- **The night-time pattern has gone.** From 2023 to July 2026, an hour around 01:00 to 03:00 was under alert about 11% to 15% of the time and an afternoon hour 2% to 5%. Since August 2026 every clock hour sits between 12% and 33%.
-- **Alerts are about as long as before; the quiet between them collapsed.** The median alert lasts 35 minutes since August 2026, inside the 28 to 49 minute range of earlier periods. The median quiet gap fell to 1.4 hours from 5 to 11 hours.
-- **A new alert within the next few hours is forecastable, but only a little better than simple rules.** On the latest eight weeks, a logistic model beats a trailing hour-of-day climatology by 5% (1 h), 13% (3 h) and 19% (6 h) in Brier score. Against the strongest simple forecast the margin is 3% to 5%, with intervals that include zero.
-- **Long history misleads, and boosted trees did not help.** An all-history hour-of-day climatology scored
-  27% to 112% worse than the 28-day one. Boosted trees scored 9% to 22% worse than it. An earlier figure of
-  18% to 86% came mostly from a calibration wrapper around the trees, not from the trees.
-- **Air Force channel text helps a little at one hour and not beyond.** Adding counts of recent Telegram posts improved the 1 h forecast by 4% over the eight weeks. At 3 h and 6 h, and in the weeks since the reform, the change is within noise.
+| New alert within | Model | Best simple forecast | Model's edge | 95% interval |
+|---|---|---|---|---|
+| 1 hour | 0.218 | 0.225 | +3.2% | -2.5% to +8.5% |
+| 3 hours | 0.217 | 0.225 | +3.3% | -4.7% to +11.1% |
+| 6 hours | 0.157 | 0.165 | +5.1% | -4.6% to +13.6% |
 
-![Alerts and hours under alert per month](outputs/figures/monthly.png)
+Brier scores (lower is better) on 940 quiet hours from 17 August to 12 October 2026. The best simple
+forecast is whichever simple rule scored best on those weeks, picked afterwards, so it is a hard bar.
+The model's edge is small and its interval includes zero. Since the alert-level reform of 7 September
+the edge is +10% at 3 hours and +12% at 6 hours.
 
-![Alert starts and time under alert by clock hour](outputs/figures/hour_profile.png)
-
-![Alert durations and quiet gaps](outputs/figures/durations_gaps.png)
-
-| Period | Days | Alerts | Alerts per day | Time under alert | Median duration | 90th pct duration | Median quiet gap | Starts 23:00 to 07:00 | Burstiness |
-|---|---|---|---|---|---|---|---|---|---|
-| 2022 (from 28 Feb) | 307 | 592 | 1.93 | 8.4% | 49 min | 127 min | 5.3 h | 29% | 0.19 |
-| 2023 to 2025 | 1,096 | 1,313 | 1.20 | 6.4% | 37 min | 188 min | 11.2 h | 40% | 0.11 |
-| Jan to Jul 2026 | 212 | 336 | 1.59 | 5.8% | 28 min | 113 min | 7.0 h | 37% | 0.08 |
-| Aug 2026 onward | 73 | 404 | 5.54 | 24.4% | 35 min | 149 min | 1.4 h | 34% | 0.19 |
-
-Burstiness is the Goh-Barabási coefficient of the times between alert starts: 0 is what a constant-rate random process gives, and values towards 1 mean alerts arrive in clusters. Kyiv's alerts are mildly clustered in every period.
-
-Since the alert-level reform of 7 September 2026, 220 finished alerts were drone-only (yellow), with a median of 34 minutes, and 25 involved a missile, ballistic or massive-drone cause (red), with a median of 47 minutes.
-
-## Data
-
-- **Source.** The [Kyiv Digital open API](https://kyiv.digital/open-api/air-alert/history) returns every alert start and all-clear for Kyiv City since February 2022 and is current to the minute. It needs no key.
-- **Cross-check.** On every run the alert table built from the API stream is compared with the city's [weekly open-data file](https://data.kyivcity.gov.ua/dataset/statystyka-povitrianykh-tryvoh-u-misti-kyievi-dep-municipal). All 2,641 published alerts match on start and end time.
-- **Scope.** Kyiv City only. It is one alert unit for the whole period, so the 2025 switch from oblast-level to raion-level alerts elsewhere in Ukraine does not break the series.
-- **Time.** The API gives Kyiv wall-clock times with no offset. They are converted to UTC, with the repeated autumn hour resolved by order and the skipped spring hour moved forward. One record fell in a repeated hour.
-- **Repairs.** In 2022 the stream has 47 repeated starts and 6 repeated all-clears. An all-clear closes the start immediately before it, which is the rule the published file follows. The series starts on 28 February 2022.
-- **Causes.** Since the reform each alert lists causes (`drone`, `missile`, `ballistic`, `massive-drone`). The list can include causes added while the alert was running, so it is only used for alerts that have already ended.
-
-Raw files are downloaded at run time and are not stored in the repository.
-
-## Forecast
-
-**Target.** At the top of each hour, if no alert is active in Kyiv: will a new alert start within the next 1, 3 or 6 hours?
-
-Forecasting whether an alert will be *active* is mostly answered by one that is already running: in the test period, 57% of the hours with an alert at some point in the following hour already had one active. Conditioning on a quiet city removes that.
-
-**Inputs at forecast time t.** Counts of alert starts in the last 1 h to 28 days, minutes under alert in the last 24 h and 7 days, time since the last start and the last all-clear, the duration and threat type of the last finished alert, clock hour, and the trailing hour-of-day climatology.
-
-**Reference forecasts.** All use only origins whose outcome was known at t:
-
-- Flat 28-day rate.
-- Hour-of-day rate over 28 days, shrunk towards the flat rate. This was fixed in advance as the reference for skill.
-- Hour-of-day rate over all history.
-- Recent-onset rate: the 28-day rate conditional on whether an alert started in the previous H hours.
-
-**Model.** Logistic regression, refitted every week on the previous 16 weeks.
-
-**Protocol.** The test period is the latest eight weeks, 17 August to 12 October 2026: 940 quiet hourly origins over 57 days. Each weekly fold trains only on origins whose label window closed before the fold starts. Scores are Brier score and Brier skill, with 95% intervals from resampling whole days 1,000 times.
-
-### How leakage is ruled out
-
-| Risk | Guard |
-|---|---|
-| A feature looks past t | `test_features_do_not_change_when_the_future_is_hidden` recomputes features with every later event removed and requires identical values, on synthetic and real data |
-| The check itself is blind | `test_a_feature_that_peeks_ahead_is_caught` adds a deliberately leaky feature and requires the check to flag exactly that one |
-| A training label overlaps the test week | `test_training_labels_close_before_each_test_fold` |
-| A reference forecast uses an outcome not yet known | `test_reference_forecasts_ignore_labels_that_have_not_closed` flips every still-open label and requires the forecast to stay the same |
-| A running alert's end time or final cause list leaks | Features use starts and ends at or before t; `truncate` blanks the end and causes of an unfinished alert |
-| Scaling or settings tuned on test data | The scaler is fitted on training rows only. The window, features and reference were fixed before the test run; later variations are in the sensitivity table |
-
-### Results on the latest eight weeks
-
-Brier score, with skill over the hour-of-day reference in brackets. Lower Brier is better. The base rate of a new alert was 33% within 1 h, 60% within 3 h and 75% within 6 h.
-
-| Forecast | 1 h | 3 h | 6 h |
-|---|---|---|---|
-| Flat 28-day rate | 0.225 (+1.9%) | 0.244 (+2.1%) | 0.191 (+1.0%) |
-| Hour-of-day rate, 28 days (reference) | 0.230 | 0.250 | 0.193 |
-| Hour-of-day rate, all history | 0.292 (-27.4%) | 0.435 (-74.2%) | 0.410 (-112.4%) |
-| Recent-onset rate, 28 days | 0.225 (+1.8%) | 0.225 (+10.1%) | 0.165 (+14.4%) |
-| Logistic, all history (first attempt) | 0.210 (+8.4%) | 0.215 (+14.0%) | 0.154 (+20.2%) |
-| **Logistic, last 16 weeks (final)** | 0.218 (+5.0%) | 0.217 (+13.1%) | 0.157 (+18.7%) |
-| Boosted trees, last 16 weeks | 0.250 (-9.0%) | 0.277 (-11.1%) | 0.236 (-22.3%) |
-| Boosted trees inside a sigmoid calibration wrapper (first run) | 0.270 (-17.8%) | 0.362 (-45.1%) | 0.358 (-85.5%) |
-
-Final model, with 95% intervals:
-
-| | 1 h | 3 h | 6 h |
-|---|---|---|---|
-| Latest 8 weeks: skill over the hour-of-day reference | +5.0% (-0.5 to +10.4) | +13.1% (+5.6 to +20.9) | +18.7% (+10.3 to +28.2) |
-| Latest 8 weeks: skill over the best simple forecast | +3.2% (-2.5 to +8.5) | +3.3% (-4.7 to +11.1) | +5.1% (-4.6 to +13.6) |
-| Since 7 Sep reform: skill over the hour-of-day reference | +4.6% (-2.1 to +11.2) | +11.8% (+1.4 to +24.6) | +24.4% (+10.4 to +41.4) |
-| Since 7 Sep reform: skill over the best simple forecast | +2.3% (-4.0 to +8.7) | +10.2% (+0.2 to +22.9) | +11.8% (+1.2 to +19.9) |
-
-The "best simple forecast" is whichever reference scored best on that period, chosen after the fact, so it is a deliberately hard bar.
-
-![Brier skill by horizon](outputs/figures/skill.png)
-
-![Reliability of the final and first models](outputs/figures/reliability.png)
-
-**Reading the results.**
-
-- The hour-of-day reference turned out weaker than a flat rate, which fits the vanished day and night pattern. Skill over it overstates what the model adds.
-- Over the full eight weeks the first attempt, trained on all history, scores slightly better than the final model at every horizon. Since the reform it does not: at 6 h it falls 6% behind the recent-onset rule, while the final model stays 12% ahead.
-- The first attempt forecasts too low. Since the reform its average 6 h forecast is 74% against an observed 87%; the final model averages 82%.
-- Calibration bin by bin is rough for both models, and the final model's highest 1 h forecasts were too high.
-- Boosted trees rank origins about as well as the logistic model at 1 h (ROC-AUC 0.63 for both) and worse at
-  3 h and 6 h, and they forecast too low: 27% on average at 1 h against an observed 33%. They score 9% to 22%
-  worse than the reference, with intervals at 1 h and 3 h that include zero.
-- **Correction.** The trees were first run inside a sigmoid calibration wrapper (`CalibratedClassifierCV`,
-  three folds). That version averaged a 12% forecast at 1 h with no ranking ability (ROC-AUC 0.51), and an
-  earlier version of this page said trees "cannot extrapolate". That explanation was never tested. Most of the
-  failure was the wrapper.
-
-**Sensitivity, run after the headline numbers.** Skill over the best simple forecast, by training window, with and without the climatology input:
-
-| Model | 8 wk, 1 h | 8 wk, 3 h | 8 wk, 6 h | Reform, 1 h | Reform, 3 h | Reform, 6 h |
-|---|---|---|---|---|---|---|
-| Last 8 weeks | +3.1% | +0.9% | -6.8% | +0.4% | +6.6% | +4.6% |
-| Last 16 weeks | +3.4% | +3.6% | +5.8% | +2.7% | +9.8% | +12.5% |
-| Last 16 weeks + climatology (final) | +3.2% | +3.3% | +5.1% | +2.3% | +10.2% | +11.8% |
-| Last 32 weeks | +5.8% | +3.6% | +1.4% | +4.8% | +8.8% | +2.6% |
-| All history | +6.6% | +4.3% | +6.9% | +1.7% | +0.8% | -6.1% |
-
-The 16- and 32-week windows stay positive in every cell; the shortest and the longest do not. The climatology input makes no real difference at 16 weeks and hurts at 8 weeks and on all history (full table in `outputs/tables/sensitivity.csv`).
-
-## Text experiment
-
-The brief's optional part: does public text published before the forecast time improve the forecast?
-
-- **Source.** 24,800 posts from the Ukrainian Air Force channel [@kpszsu](https://t.me/s/kpszsu), 26 April to 12 October 2026, read from the public web preview. These are minute-level threat messages such as "jet-powered UAV heading for Kyiv from the north".
-- **Features at t.** Counts of posts published strictly before t: all posts in the last 60 and 180 minutes, posts mentioning Kyiv or "the capital" in the last 15, 30, 60 and 180 minutes, posts with missile or strategic-aviation keywords in the last 60 and 180 minutes, and minutes since the last Kyiv mention. The keyword groups and windows were fixed before any result was produced.
-- **Edited posts.** 2% of posts are marked edited. They keep their timestamp but their text is ignored, because the text shown now may have been written after publication.
-- **Test.** The final model with and without these features, on the same folds. The second design uses 15-minute origins, where recent text has the best chance to matter.
-
-Brier skill of the model with text over the same model without it, with 95% intervals:
-
-| Origins | Horizon | Latest 8 weeks | Since 7 Sep reform |
-|---|---|---|---|
-| Hourly | 1 h | +4.0% (+0.4 to +7.3) | +1.7% (-3.5 to +6.3) |
-| Hourly | 3 h | +3.0% (-0.3 to +6.5) | -1.2% (-4.4 to +2.3) |
-| Hourly | 6 h | +1.8% (-2.2 to +5.7) | -3.4% (-9.2 to +3.4) |
-| Every 15 minutes | 1 h | +4.2% (+1.1 to +6.7) | +1.7% (-2.4 to +5.6) |
-
-Text adds about 4% at one hour over the eight weeks, and that interval excludes zero in both designs. Nothing is measurable at 3 h or 6 h, and since the reform no interval excludes zero. The gain is real but small, so the headline model stays on alert history alone.
-
-Two caveats. The posts were collected after the fact, so posts deleted since are missing. And keyword matching is crude: a post about a town near Kyiv that does not name Kyiv is not counted. Structured extraction of threat type, direction and target from each post, for example with an LLM used only as a parser, is the natural next step and was not run here.
-
-## Limits
-
-- One city, eight weeks, and a test period that sits inside a surge. The intervals are wide and most margins over the best simple forecast include zero.
-- The alert-level reform is five weeks old; any conclusion about yellow and red alerts rests on 25 red-type alerts.
-- Alerts are a response to an adversary. A pattern that holds for eight weeks can end overnight, and the model only adapts after the change shows up in the data.
-- Hourly origins hide anything faster than an hour, including how alerts spread between regions.
-- The headline forecast uses alert history only. Text was tested with keyword counts from one channel; launch reports and weather were not used.
-
-## Reproduce
+## Use it
 
 ```
 uv sync
-uv run pytest
-uv run python -m airalerts.run --as-of 2026-10-12T18:00:00Z --sensitivity
+uv run python -m airalerts.now     # the forecast right now, in the terminal
+uv run python -m airalerts.run     # rebuild every table and figure, and outputs/page.html
+uv run pytest                      # 30 tests, including the leakage checks
 ```
 
-`--as-of` discards everything after the given UTC time, so the command reproduces the numbers above from a fresh download. Without it, the run uses all data available at download time. Outputs go to `outputs/`: `metrics.json`, `tables/` and `figures/`.
-
-The text experiment needs the channel backfill first, which takes about half an hour at one request per second:
+`airalerts.now` downloads the current data and prints something like this:
 
 ```
-uv run python -m airalerts.telegram kpszsu --since 2026-04-27T00:00:00Z
-uv run python -m airalerts.text --as-of 2026-10-12T18:00:00Z
+Kyiv City at 2026-10-12 21:00 Kyiv time
+No alert is active. The last one ended 1 h 47 min ago.
+
+New alert within    model   simple  best simple forecast
+1 hour                50%      41%  flat 28-day rate
+3 hours               83%      77%  recent-onset rate, 28 days
+6 hours               96%      91%  recent-onset rate, 28 days
 ```
 
-Posts can be edited or deleted after publication, so a later backfill may differ slightly from the one used here.
+While an alert is running it prints how much longer the alert is likely to last instead. Add
+`--as-of 2026-10-12T18:00:00Z` to either command to work from a past instant; nothing after it is used.
+
+[`outputs/page.html`](outputs/page.html) is the page in the screenshot: one self-contained file, written
+by `airalerts.run`, that opens in any browser without a server.
+
+## What the data shows
+
+- **September 2026 was the heaviest month since March 2022**: 190 alert starts and 243 hours under alert.
+  Since August the city has averaged 5.5 alerts a day, against 1.2 to 1.9 in earlier periods.
+- **The night-time pattern has gone.** From 2023 to July 2026 alerts were concentrated in the small
+  hours. Since August every clock hour is under alert 12% to 33% of the time.
+- **Alerts are about as long as before; the quiet between them collapsed.** The median alert lasts
+  35 minutes. The median quiet gap fell to 1.4 hours from 5 to 11 hours.
+
+## What the forecast can and cannot do
+
+- **Alert history gives a small edge over simple rules** (the table above), clearer since the reform.
+- **Long history and boosted trees did not help.** An all-history hour-of-day rate scored 27% to 112%
+  worse than a 28-day one, and boosted trees 9% to 22% worse.
+- **Air Force channel text adds about 4% at one hour** and nothing measurable at 3 or 6 hours.
+- **For a running alert, minutes elapsed help a little.** The 80% interval for the time remaining covered
+  the truth 75% of the time, against 62% when elapsed time is ignored. The middle estimate is still off
+  by about 70 minutes on average.
+
+## How it is kept honest
+
+- Every input at time t is computed from alert starts and ends at or before t. Tests recompute each
+  feature, estimate and page element with the future hidden or altered and require identical output.
+- A deliberately leaky feature is added in one test to prove the check can catch one.
+- The live forecast for a past instant must equal what the backtest produced for that instant.
+- Each new experiment had its design fixed first and was scored once on the test weeks.
+- Skill is quoted against the strongest simple forecast, not the weakest.
+- An earlier claim about boosted trees was wrong and is corrected in [docs/results.md](docs/results.md).
+
+## More
+
+- [docs/method.md](docs/method.md): data, target, model, evaluation protocol, leakage checks.
+- [docs/results.md](docs/results.md): every table and figure, the corrections, and the limits.
+- [REFLECTION.txt](REFLECTION.txt): what went wrong and what changed.
+- [conversation/](conversation/): the AI conversation logs behind the project.
 
 ## Layout
 
 ```
 src/airalerts/
   data.py       download, clean, cross-check -> alert table in UTC
-  describe.py   descriptive tables and figures
   grid.py       as-of features and labels on a time grid
-  baselines.py  reference forecasts
-  model.py      logistic and boosted estimators
+  baselines.py  simple reference forecasts
+  model.py      the final model and the challengers
   evaluate.py   walk-forward folds, scores, day-block bootstrap
+  now.py        live forecast for one instant
+  remaining.py  time left in a running alert
+  page.py       the status page
+  describe.py   descriptive tables and figures
   report.py     evaluation figures
-  run.py        entry point
   telegram.py   backfill of a public Telegram channel
-  text.py       text features and the with/without-text ablation
+  text.py       text features and the with/without-text test
+  run.py        entry point for the whole pipeline
 tests/          data cleaning and leakage tests
-outputs/        metrics, tables and figures from the run above
+outputs/        metrics, tables, figures and the page for the snapshot of 12 October 2026, 18:00 UTC
+docs/           method, results, and the page screenshot
 ```
-
-`outputs/metrics_v0.json` is the first attempt as recorded before any changes (git tag `v0`).

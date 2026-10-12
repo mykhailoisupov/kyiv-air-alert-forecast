@@ -1,10 +1,9 @@
 What went wrong? My first model, logistic regression on all history, looked strong (+8% to +20% Brier skill)
-only because my reference forecast was weak: a flat 28-day rate beat it. Since the September alert reform that
-model forecast too low and lost to a simple rule at 6 hours. I also wrote that boosted trees "failed outright";
-a review showed most of that was my calibration wrapper.
+only because my reference forecast was weak; a flat 28-day rate beat it. Since the September reform it
+forecast too low. I also blamed boosted trees for a failure caused mostly by my own calibration wrapper.
 
-How did I adjust? I scored everything against the strongest simple forecast, split results by period, trained
-on the last 16 weeks only, and re-ran the trees without the wrapper.
+How did I adjust? I scored everything against the strongest simple forecast, split results by period,
+trained on 16 recent weeks, and re-ran the trees without the wrapper.
 
 Why is the final version better? Since the reform it beats the best simple forecast by 10-12% at 3-6 hours.
-Over the full eight weeks it is not better, and the README says so.
+Over all eight weeks it is not better than the first attempt, and I say so.

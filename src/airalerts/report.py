@@ -22,23 +22,23 @@ LABELS = {
 
 
 def plot_skill(report: dict, path: Path) -> None:
-    """Brier skill over the hour-of-day climatology, with 95% intervals, per horizon."""
+    """Brier skill over the best simple forecast of each period, with 95% intervals, per horizon."""
     horizons = list(report["horizons"])
     names = list(LABELS)
     fig, axes = plt.subplots(1, len(horizons), figsize=(10, 4.4), sharey=True, sharex=True)
     fig.subplots_adjust(left=0.2, right=0.985, top=0.72, bottom=0.14, wspace=0.08)
-    subtitle = "Brier skill over a trailing hour-of-day climatology (0 = no better). "
+    subtitle = "Brier skill over whichever simple forecast scored best on that period (0 = no better). "
     subtitle += "Lines are 95% intervals from resampling days."
-    titled(fig, "Clear skill over climatology at 3 and 6 hours, marginal at 1 hour", subtitle)
+    titled(fig, "Against the best simple forecast, the model's edge is small", subtitle)
     handles = []
     for ax, h in zip(axes, horizons):
         handles = []
         for offset, (period, _, colour) in zip((0.16, -0.16), PERIODS):
             block = report["horizons"][h][period]["forecasts"]
             y = np.arange(len(names))[::-1] + offset
-            skill = np.array([100 * block[n]["brier_skill"] for n in names])
-            low = np.array([100 * block[n]["brier_skill_ci95"][0] for n in names])
-            high = np.array([100 * block[n]["brier_skill_ci95"][1] for n in names])
+            skill = np.array([100 * block[n]["skill_vs_best_simple"] for n in names])
+            low = np.array([100 * block[n]["skill_vs_best_simple_ci95"][0] for n in names])
+            high = np.array([100 * block[n]["skill_vs_best_simple_ci95"][1] for n in names])
             ax.hlines(y, low, high, color=colour, linewidth=2)
             handles.append(ax.scatter(skill, y, s=42, color=colour, edgecolor=SURFACE, linewidth=1.5, zorder=3))
         ax.axvline(0, color=AXIS, linewidth=1)
