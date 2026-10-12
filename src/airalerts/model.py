@@ -38,6 +38,12 @@ class ModelSpec:
     extra_log_features: tuple[str, ...] = ()  # further count-like columns, log-transformed
 
 
+HORIZONS = (1, 3, 6)  # hours
+# The model every headline number refers to: recent data only, with the trailing climatology
+# as an input so the base rate can move.
+FINAL = ModelSpec("logit_16w", train_weeks=16, reference_logits=("hour_28d",))
+
+
 def logit(p: np.ndarray) -> np.ndarray:
     p = np.clip(p, 1e-4, 1 - 1e-4)
     return np.log(p / (1 - p))

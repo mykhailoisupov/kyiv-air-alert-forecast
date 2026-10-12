@@ -9,21 +9,18 @@ from pathlib import Path
 import pandas as pd
 
 from airalerts import data, describe, evaluate, grid
-from airalerts.model import ModelSpec, coefficients
+from airalerts.model import FINAL, HORIZONS, ModelSpec, coefficients
 from airalerts.report import plot_reliability, plot_skill
 
-HORIZONS = (1, 3, 6)
 MODELS = [
     # First attempt: plain logistic regression on every earlier origin.
     ModelSpec("logit_all_history", train_weeks=None),
-    # Final: recent data only, with the trailing climatology as an input so the base rate can move.
-    ModelSpec("logit_16w", train_weeks=16, reference_logits=("hour_28d",)),
+    FINAL,
     # Challenger as first run: boosted trees on the same inputs inside a sigmoid calibration wrapper.
     ModelSpec("boosting_16w", train_weeks=16, reference_logits=("hour_28d",), estimator="boosting"),
     # The same trees without the wrapper, added after a review traced most of the failure to it.
     ModelSpec("boosting_16w_uncalibrated", 16, ("hour_28d",), estimator="boosting_uncalibrated"),
 ]
-FINAL = "logit_16w"
 
 
 def parse_args() -> argparse.Namespace:
@@ -53,8 +50,7 @@ def main() -> None:
 
     table = grid.make_grid(events, as_of, HORIZONS)
     report, predictions, fitted = evaluate.evaluate(table, HORIZONS, MODELS)
-    final_spec = next(spec for spec in MODELS if spec.name == FINAL)
-    weights = pd.DataFrame({f"{h}h": coefficients(fitted[h][FINAL], final_spec) for h in HORIZONS})
+    weights = pd.DataFrame({f"{h}h": coefficients(fitted[h][FINAL.name], FINAL) for h in HORIZONS})
     weights.to_csv(args.out_dir / "tables" / "final_model_coefficients.csv", index_label="feature")
     report = {"data": info, **report}
     (args.out_dir / "metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
